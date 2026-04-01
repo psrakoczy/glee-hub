@@ -221,7 +221,25 @@ select option{background:#fff}
 .ds-ok{color:var(--green)}.ds-ok .drive-dot{background:var(--green)}
 .ds-off{color:var(--text2)}.ds-off .drive-dot{background:var(--text2)}
 .ds-err{color:var(--red)}.ds-err .drive-dot{background:var(--red)}
+
+<style>
+/* When loaded inside GLEE Hub iframe — hide own chrome */
+html.in-iframe .topbar,
+html.in-iframe .sidebar { display: none !important; }
+html.in-iframe .layout { padding-top: 0 !important; }
+html.in-iframe .main {
+  margin-left: 0 !important;
+  height: 100vh !important;
+}
 </style>
+</style>
+
+<script>
+// Detect if running inside iframe (GLEE Hub)
+if(window.self !== window.top) {
+  document.documentElement.classList.add('in-iframe');
+}
+</script>
 </head>
 <body>
 

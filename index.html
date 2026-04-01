@@ -149,15 +149,7 @@ function getFilteredNav() {
     .map(n => {
       // Ops: quality shows DSY2 only (Overview + Reporting), no other pages
       if(isOps && n.id === 'quality'){
-        return {...n,pages:[
-          {id:'dsy2',label:'DSY2',sub:[
-            {id:'overview',label:'Overview'},
-            {id:'kpi',label:'KPI Trends'},
-            {id:'ranking',label:'DA Ranking'},
-            {id:'concessions',label:'Concessions'},
-            {id:'manage',label:'Manage Data'}
-          ]}
-        ]};
+        return {...n,pages:[{id:'dsy2',label:'DSY2 — Dashboard'}]};
       }
       return n;
     });
@@ -1054,34 +1046,10 @@ function renderUserMenu(){
 }
 
 /* MAIN RENDER */
-function renderQualityDSY2(sub){
+function renderQualityDSY2(){
   const w=d({flex:'1',display:'flex',flexDirection:'column',overflow:'hidden'});
   w.className='fade';
-  // Sub-nav tabs: Overview / Reporting
-  const tabs=d({display:'flex',gap:'0',background:'#fff',borderBottom:'1px solid var(--bd)',flexShrink:'0',padding:'0 28px'});
-  ['overview','reporting'].forEach(s=>{
-    const active=(!sub&&s==='overview')||(sub===s);
-    const tab=d({
-      padding:'12px 18px',fontFamily:'var(--fd)',fontSize:'11px',fontWeight:'700',
-      letterSpacing:'.1em',textTransform:'uppercase',cursor:'pointer',
-      borderBottom:active?'2px solid var(--black)':'2px solid transparent',
-      color:active?'var(--t1)':'var(--t3)',transition:'all .12s',userSelect:'none'
-    },s.charAt(0).toUpperCase()+s.slice(1));
-    tab.addEventListener('click',()=>nav('quality','dsy2',s));
-    tabs.appendChild(tab);
-  });
-  w.appendChild(tabs);
-  // Load quality dashboard in iframe
-  // Map hub sub-page to quality dashboard section
-  const subMap={overview:'overview',kpi:'kpi',ranking:'da-ranking',concessions:'concessions',manage:'manage'};
-  const hash=subMap[sub||'overview']||'overview';
-  const frame=el('iframe',{
-    src:'quality.html#'+hash,
-    style:{
-      flex:'1',width:'100%',border:'none',display:'block'
-    },
-    allow:'same-origin'
-  });
+  const frame=el('iframe',{src:'quality.html',style:{flex:'1',width:'100%',border:'none',display:'block'}});
   w.appendChild(frame);
   return w;
 }
