@@ -1080,20 +1080,14 @@ function render(){
       if(s&&s.user&&s.expires>Date.now()){
         APP.user=s.user;
         APP.gmail.threads=getDemoEmails();
-        if(APP.user.role==='ops'){APP.section='quality';APP.page='dsy2';APP.sub='overview';}
       }
     }catch(e){}
   }
   if(!APP.user){app.appendChild(renderLogin());return;}
-  // If coming back from quality page (?hub=1), force dashboard
+  // If coming back from quality page (?hub=1) — always show dashboard
   if(window.location.search.includes('hub=1')){
     APP.section='dashboard';APP.page='overview';APP.sub=null;
     history.replaceState(null,'',window.location.pathname);
-  }
-  // Ops managers: only redirect if on a section they can't access
-  const opsAllowed=['dashboard','quality'];
-  if(APP.user&&APP.user.role==='ops'&&!opsAllowed.includes(APP.section)){
-    APP.section='dashboard';APP.page='overview';APP.sub=null;
   }
   const shell=d({height:'100vh',display:'flex',flexDirection:'column',overflow:'hidden'});
   shell.appendChild(makeTopbar());
