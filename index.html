@@ -1067,6 +1067,12 @@ function getContent(){
 
 function render(){
   const app=document.getElementById('app');app.innerHTML='';
+  // Handle signout from quality page
+  if(window.location.search.includes('signout=1')){
+    sessionStorage.removeItem('gleeSession');
+    APP.user=null;
+    history.replaceState(null,'',window.location.pathname);
+  }
   // Restore session if not logged in
   if(!APP.user){
     try{
