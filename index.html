@@ -60,6 +60,33 @@ const APP={
 };
 
 /* SCRAPED DATA */
+/* Try to load live data from Chrome extension storage */
+function loadLiveRouteData(callback) {
+  try {
+    if (typeof chrome !== 'undefined' && chrome.storage) {
+      chrome.storage.local.get(['gleeRouteData', 'gleeLastScrape'], (result) => {
+        if (result && result.gleeRouteData && result.gleeRouteData.routes) {
+          const d = result.gleeRouteData;
+          const age = (Date.now() - new Date(d.scrapedAt).getTime()) / 1000 / 60; // minutes
+          if (age < 10) { // only use data less than 10 minutes old
+            callback(d, result.gleeLastScrape);
+            return;
+          }
+        }
+        callback(null, null);
+      });
+    } else {
+      callback(null, null);
+    }
+  } catch(e) { callback(null, null); }
+}
+/* Auto-refresh live data every 30 seconds */
+setInterval(() => {
+  loadLiveRouteData((data, lastScrape) => {
+    if (data && APP.section === 'dashboard') render();
+  });
+}, 30000);
+
 const FLEET={station:'Lampertswalde (DSY2)',stationCode:'PLZ01561',totalActive:62,operational:55,grounded:7,groundedReasons:{inspectionDefect:1,issueReported:6,tuvInspection:0},dvic:{preTrip:49,postTrip:6,postTripRemaining:43,newDefects:0},portalUrl:'https://logistics.amazon.de/fleet-management?navMenuVariant=external'};
 
 const RAW=[
@@ -301,12 +328,30 @@ const ACCOUNTS = [
     role: 'admin'
   },
   {
-    username: 'ops',
-    password: 'OpsGlee24',
-    name: 'Operations Manager',
+    username: 'adam',
+    password: 'adam111gle',
+    name: 'Adam Sochacki',
     title: 'Operations Manager',
-    email: 'ops@gleelogistics.de',
-    initials: 'OM',
+    email: 'a.sochacki@gleelogistics.de',
+    initials: 'AS',
+    role: 'ops'
+  },
+  {
+    username: 'monika',
+    password: 'monika987gle',
+    name: 'Monika Wedrzyk',
+    title: 'Operations Manager',
+    email: 'm.wedrzyk@gleelogistics.de',
+    initials: 'MW',
+    role: 'ops'
+  },
+  {
+    username: 'patryk',
+    password: 'sura675gle',
+    name: 'Patryk Sura',
+    title: 'Operations Manager',
+    email: 'p.sura@gleelogistics.de',
+    initials: 'PS',
     role: 'ops'
   },
   {
@@ -495,25 +540,47 @@ function renderDashboard(){
   const total=ROUTES.reduce((s,r)=>s+r.dt,0);
   const done=ROUTES.reduce((s,r)=>s+r.dc,0);
   const pct=Math.round(done/total*100);
-  const portalUrl='https://logistics.amazon.de/operations/execution/dv/routes?navMenuVariant=external&provider=ALL_DRIVERS&selectedDay=2026-04-01&serviceAreaId=79b18918-ed92-47f1-af33-59c03edab660';
+  const portalUrl='https://logistics.amazon.de/operations/execution/dv/routes?navMenuVariant=external&provider=ALL_DRIVERS&serviceAreaId=79b18918-ed92-47f1-af33-59c03edab660';
+  const today=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
   const w=d({flex:'1',display:'flex',flexDirection:'column'});w.className='fade';
   w.appendChild(d({padding:'22px 28px 0',flexShrink:'0'},
-    d({fontSize:'9px',letterSpacing:'.2em',textTransform:'uppercase',color:'var(--t3)',marginBottom:'5px',fontFamily:'var(--fd)'},'Welcome, '+((APP.user&&APP.user.name&&APP.user.name.split(' ')[0])||'there')+' \xb7 1 Apr 2026'),
+    d({fontSize:'9px',letterSpacing:'.2em',textTransform:'uppercase',color:'var(--t3)',marginBottom:'5px',fontFamily:'var(--fd)'},'Welcome, '+((APP.user&&APP.user.name&&APP.user.name.split(' ')[0])||'there')+' \xb7 '+today),
     d({fontFamily:'var(--fd)',fontSize:'32px',fontWeight:'900',color:'var(--t1)',lineHeight:'1'},'Operations ',sp({fontWeight:'300',color:'var(--t3)'},'Overview'))
   ));
   const body=d({padding:'16px 28px 28px',flex:'1',overflowY:'auto',display:'flex',flexDirection:'column',gap:'14px'});
 
-  /* Route Summary */
+  /* Route Summary — tries live data from extension first */
   const rs=document.createElement('div');rs.className='fade1';
   const rp=d({background:'#fff',border:'1px solid var(--bd)',overflow:'hidden'});
-  rp.appendChild(panelHead('DSY2 \u2014 Route Summary',''));
-  const tg=d({display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1fr'});
-  [
-    [String(ROUTES.length),'Routes Today','Active routes \xb7 DSY2','dark'],
-    [total.toLocaleString(),'Total Parcels','Across all 41 routes','dark'],
-    [pct+'%','Delivered',done.toLocaleString()+' of '+total.toLocaleString(),'hero'],
-    ['\u2197 Open','Amazon Portal','logistics.amazon.de','link']
-  ].forEach(([val,lbl,sub,typ],i)=>{
+
+  // Build route summary section (updates when live data arrives)
+  function buildRouteSummary(container, liveData, lastScrape) {
+    container.innerHTML='';
+    const routeTotal  = liveData ? liveData.routes.total : ROUTES.length;
+    const routeParcels = liveData ? liveData.routes.totalParcels : total;
+    const routeDone   = liveData ? liveData.routes.deliveredParcels : done;
+    const routePct    = liveData ? liveData.routes.parcelPct : pct;
+    const routeBehind = liveData ? liveData.routes.behind : ROUTES.filter(r=>r.bh>0).length;
+    const routeAhead  = liveData ? liveData.routes.ahead : ROUTES.filter(r=>r.bh===0).length;
+    const isLive = !!liveData;
+    const scrapeTime = lastScrape ? new Date(lastScrape).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) : null;
+
+    const headAction = isLive ? ('\u2713 Live \xb7 Updated '+scrapeTime) : '\u26a0 Demo Data \xb7 Install Extension';
+    const headColor = isLive ? 'var(--green)' : 'var(--amber)';
+    const ph = panelHead('DSY2 \u2014 Route Summary', headAction, null);
+    if(ph.lastChild) ph.lastChild.style.color = headColor;
+    container.appendChild(ph);
+
+    const tg=d({display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1fr'});
+    const parcelSub = isLive && liveData.routes.remaining
+      ? liveData.routes.remaining.toLocaleString()+' remaining'
+      : (routeDone.toLocaleString()+' of '+(routeParcels||'?').toLocaleString());
+    [
+      [String(routeTotal),'Routes Today',(isLive?'In progress: '+liveData.routes.inProgress:'Active routes \xb7 DSY2'),'dark'],
+      [routePct+'%','Parcel Progress',parcelSub,'hero'],
+      [(isLive?liveData.routes.behind:ROUTES.filter(r=>r.bh>0).length)+' behind / '+(isLive?liveData.routes.ahead:ROUTES.filter(r=>r.bh===0).length)+' ahead','Route Status',(isLive?liveData.routes.atRisk+' at risk':'Route performance'),'dark'],
+      ['\u2197 Open','Amazon Portal','logistics.amazon.de','link']
+    ].forEach(([val,lbl,sub,typ],i)=>{
     const tile=d({background:typ==='hero'?'var(--ti1)':'var(--black)',padding:'20px 22px 16px',borderRight:i<3?'1px solid rgba('+(typ==='hero'?'0,0,0':'255,255,255')+',.04)':'none',cursor:typ==='link'?'pointer':'default',display:'flex',flexDirection:'column',justifyContent:'space-between'});
     tile.appendChild(d({fontSize:'8px',letterSpacing:'.18em',textTransform:'uppercase',color:typ==='hero'?'rgba(0,0,0,.35)':'var(--ti3)',marginBottom:'8px',fontFamily:'var(--fd)'},lbl));
     tile.appendChild(d({fontFamily:'var(--fd)',fontSize:typ==='link'?'20px':'44px',fontWeight:'900',color:typ==='hero'?'var(--black)':'var(--ti1)',lineHeight:'1'},val));
@@ -521,7 +588,15 @@ function renderDashboard(){
     if(typ==='link')tile.addEventListener('click',()=>window.open(portalUrl,'_blank'));
     tg.appendChild(tile);
   });
-  rp.appendChild(tg);rs.appendChild(rp);body.appendChild(rs);
+    container.appendChild(tg);
+  }
+
+  buildRouteSummary(rp, null, null);
+  // Try to load live data and update
+  loadLiveRouteData((liveData, lastScrape) => {
+    buildRouteSummary(rp, liveData, lastScrape);
+  });
+  rs.appendChild(rp);body.appendChild(rs);
 
   /* Schedule */
   const ss=document.createElement('div');ss.className='fade1';
