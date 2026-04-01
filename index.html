@@ -125,7 +125,7 @@ const SCHEDULE=[
 
 const ROLES={
   admin:{label:'Admin / Owner',icon:'\u25a3',nav:['dashboard','email','quality','fleet','employee','finance']},
-  ops:{label:'Ops Manager',icon:'\u2b21',nav:['dashboard','email','fleet','employee']},
+  ops:{label:'Ops Manager',icon:'\u2b21',nav:['dashboard','email','quality','fleet','employee'],qualityDSY2Only:true},
   hr:{label:'HR Manager',icon:'\u25ce',nav:['dashboard','email','employee']}
 };
 
@@ -137,6 +137,29 @@ const NAV=[
   {id:'employee',label:'Employee',pages:[{id:'overview',label:'Overview'},{id:'dsy2',label:'DSY2',badge:'GLEE App'},{id:'dbb3',label:'DBB3',badge:'GLEE App'},{id:'hr',label:'HR'}]},
   {id:'finance',label:'Finance',pages:[{id:'overview',label:'Overview'},{id:'routecalc',label:'Route Calc',sub:[{id:'dsy2',label:'DSY2'},{id:'dbb3',label:'DBB3'}]},{id:'revenue',label:'Revenue'},{id:'costs',label:'Costs'}]}
 ];
+
+/* Get filtered NAV for current user role */
+function getFilteredNav() {
+  const role = APP.user && APP.user.role;
+  const roleConfig = ROLES[role] || ROLES.ops;
+  const allowed = roleConfig.nav || ['dashboard'];
+  const isOps = role === 'ops';
+  return NAV
+    .filter(n => allowed.includes(n.id))
+    .map(n => {
+      if(isOps && n.id === 'quality'){
+        return {...n,pages:[{id:'dsy2',label:'DSY2',sub:[{id:'overview',label:'Overview'},{id:'reporting',label:'Reporting'}]}]};
+      }
+      if(isOps && n.id === 'fleet'){
+        return {...n,pages:[{id:'dsy2',label:'DSY2 — Live Routes'}]};
+      }
+      if(isOps && n.id === 'employee'){
+        return {...n,pages:[{id:'overview',label:'Overview'},{id:'dsy2',label:'DSY2',badge:'GLEE App'}]};
+      }
+      return n;
+    });
+}
+
 
 /* HELPERS */
 function nav(s,p,sb){APP.section=s;APP.page=p||(NAV.find(n=>n.id===s)||{pages:[{id:'overview'}]}).pages[0].id;APP.sub=sb||null;APP.userMenuOpen=false;render();}
@@ -485,8 +508,7 @@ function makeTopbar(){
 /* SIDEBAR */
 function makeSidebar(){
   const icons={dashboard:'\u25a3',email:'\u2709',quality:'\u25c8',fleet:'\u2b21',employee:'\u25ce',finance:'\u25c7'};
-  const allowed=(ROLES[APP.user&&APP.user.role]||{nav:['dashboard']}).nav;
-  const items=NAV.filter(n=>allowed.includes(n.id));
+  const items=getFilteredNav();
   const sb=d({width:'210px',background:'var(--near)',borderRight:'1px solid rgba(255,255,255,.04)',display:'flex',flexDirection:'column',flexShrink:'0',overflowY:'auto',paddingTop:'8px'});
   items.forEach((sec,si)=>{
     const a=APP.section===sec.id;
