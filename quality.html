@@ -221,25 +221,7 @@ select option{background:#fff}
 .ds-ok{color:var(--green)}.ds-ok .drive-dot{background:var(--green)}
 .ds-off{color:var(--text2)}.ds-off .drive-dot{background:var(--text2)}
 .ds-err{color:var(--red)}.ds-err .drive-dot{background:var(--red)}
-
-<style>
-/* When loaded inside GLEE Hub iframe — hide own chrome */
-html.in-iframe .topbar,
-html.in-iframe .sidebar { display: none !important; }
-html.in-iframe .layout { padding-top: 0 !important; }
-html.in-iframe .main {
-  margin-left: 0 !important;
-  height: 100vh !important;
-}
 </style>
-</style>
-
-<script>
-// Detect if running inside iframe (GLEE Hub)
-if(window.self !== window.top) {
-  document.documentElement.classList.add('in-iframe');
-}
-</script>
 </head>
 <body>
 
@@ -251,6 +233,7 @@ if(window.self !== window.top) {
     <span class="topbar-clock" id="t-clock"></span>
   </div>
   <div class="topbar-right">
+<a href="index.html" style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;margin-right:8px;transition:background .15s;" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.08)'">&#8592; Hub</a>
     <span class="topbar-role">Admin / Manager</span>
     <span class="topbar-station"><span class="live-dot"></span> LIVE · DSY2</span>
     <div class="topbar-avatar">GL</div>
