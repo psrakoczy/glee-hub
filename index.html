@@ -5,884 +5,898 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GLEE Hub</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;600;700;800;900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-authentication-library-for-js/4.4.0/msal-browser.min.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
-:root {
-  --cream:  #F5F5F3;
-  --cream2: #EEECEA;
-  --cream3: #E2E0DC;
-  --black:  #0F0F0F;
-  --near:   #1A1A1A;
-  --dark:   #222222;
-  --mid:    #2C2C2C;
-  --shade:  #383838;
-  --t1:     #1A1A1A;
-  --t2:     #555555;
-  --t3:     #888888;
-  --t4:     #AAAAAA;
-  --ti1:    #F0F0EE;
-  --ti2:    #AAAAAA;
-  --ti3:    #585858;
-  --bd:     rgba(0,0,0,0.08);
-  --bdd:    rgba(255,255,255,0.06);
-  --fd: 'Barlow Condensed', sans-serif;
-  --fb: 'Barlow', sans-serif;
+:root{
+  --cream:#F5F5F3;--cream2:#EEECEA;--cream3:#E2E0DC;
+  --black:#0F0F0F;--near:#1A1A1A;--dark:#222;--shade:#383838;
+  --t1:#1A1A1A;--t2:#555;--t3:#888;--t4:#AAA;
+  --ti1:#F0F0EE;--ti2:#AAA;--ti3:#585858;
+  --bd:rgba(0,0,0,0.08);
+  --red:#e74c3c;--amber:#e67e22;--green:#27ae60;
+  --fd:'Barlow Condensed',sans-serif;--fb:'Barlow',sans-serif;
 }
-*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
-html,body,#app { height:100%; font-family:var(--fb); background:var(--black); -webkit-font-smoothing:antialiased; overflow:hidden; }
-button { font-family:var(--fb); cursor:pointer; border:none; background:none; }
-::-webkit-scrollbar { width:3px; height:3px; }
-::-webkit-scrollbar-track { background:transparent; }
-::-webkit-scrollbar-thumb { background:var(--shade); border-radius:2px; }
-@keyframes fadeUp { from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);} }
-.fade  { animation:fadeUp 0.25s ease both; }
-.fade1 { animation:fadeUp 0.25s 0.04s ease both; }
-.fade2 { animation:fadeUp 0.25s 0.08s ease both; }
-.fade3 { animation:fadeUp 0.25s 0.12s ease both; }
-.fade4 { animation:fadeUp 0.25s 0.16s ease both; }
-.fade5 { animation:fadeUp 0.25s 0.20s ease both; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body,#app{height:100%;font-family:var(--fb);background:var(--black);-webkit-font-smoothing:antialiased;overflow:hidden;}
+::-webkit-scrollbar{width:3px;height:3px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--shade);border-radius:2px;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+.fade{animation:fadeUp .25s ease both;}.fade1{animation:fadeUp .25s .05s ease both;}.fade2{animation:fadeUp .25s .10s ease both;}.fade3{animation:fadeUp .25s .15s ease both;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}.live{animation:pulse 2s ease infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}.spin{animation:spin 1s linear infinite;}
+.login-screen{position:fixed;inset:0;background:var(--black);display:flex;align-items:center;justify-content:center;z-index:1000;}
+.login-card{width:420px;padding:48px;border:1px solid rgba(255,255,255,0.06);}
+.login-logo{font-family:var(--fd);font-size:32px;font-weight:900;letter-spacing:.1em;color:var(--ti1);margin-bottom:4px;}
+.login-logo span{font-weight:300;opacity:.4;}
+.login-sub{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--ti3);margin-bottom:36px;}
+.login-label{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--ti3);font-weight:700;margin-bottom:10px;font-family:var(--fd);}
+.role-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:28px;}
+.role-btn{padding:14px 8px;border:1px solid rgba(255,255,255,0.08);background:transparent;cursor:pointer;transition:all .15s;text-align:center;}
+.role-icon{font-size:20px;margin-bottom:7px;display:block;}
+.role-name{font-family:var(--fd);font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ti3);}
+.role-btn:hover,.role-btn.active{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.2);}
+.role-btn.active .role-name{color:var(--ti1);}
+.google-btn{width:100%;padding:14px;background:var(--ti1);color:var(--black);border:none;cursor:pointer;font-family:var(--fd);font-size:13px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;display:flex;align-items:center;justify-content:center;gap:10px;transition:opacity .15s;margin-bottom:12px;}
+.google-btn:hover{opacity:.85;}.google-btn:disabled{opacity:.35;cursor:not-allowed;}
+.login-note{font-size:10px;color:var(--ti3);text-align:center;line-height:1.6;}
 </style>
 </head>
 <body>
 <div id="app"></div>
 <script>
-/* ═══════════════════════════════════════
-   NAV STRUCTURE (from sketch)
-═══════════════════════════════════════ */
-const NAV = [
-  {
-    id:'dashboard', label:'Dashboard',
-    pages:[
-      { id:'overview', label:'Overview' }
-    ]
-  },
-  {
-    id:'email', label:'Email',
-    pages:[
-      { id:'overview', label:'Overview' },
-      { id:'dsy2',     label:'DSY2' },
-      { id:'dbb3',     label:'DBB3' }
-    ]
-  },
-  {
-    id:'quality', label:'Quality',
-    pages:[
-      { id:'overview', label:'Overview' },
-      { id:'dsy2', label:'DSY2', sub:[
-        { id:'overview',  label:'Overview' },
-        { id:'reporting', label:'Reporting' }
-      ]},
-      { id:'dbb3', label:'DBB3', sub:[
-        { id:'overview',  label:'Overview' },
-        { id:'reporting', label:'Reporting' }
-      ]}
-    ]
-  },
-  {
-    id:'fleet', label:'Fleet',
-    pages:[
-      { id:'overview',  label:'Overview' },
-      { id:'fleetapp',  label:'Fleet App' },
-      { id:'dsy2',      label:'DSY2' },
-      { id:'dbb3',      label:'DBB3' }
-    ]
-  },
-  {
-    id:'employee', label:'Employee',
-    pages:[
-      { id:'overview', label:'Overview' },
-      { id:'dsy2',     label:'DSY2',  badge:'GLEE App' },
-      { id:'dbb3',     label:'DBB3',  badge:'GLEE App' },
-      { id:'hr',       label:'HR' }
-    ]
-  },
-  {
-    id:'finance', label:'Finance',
-    pages:[
-      { id:'overview', label:'Overview' },
-      { id:'routecalc', label:'Route Calc', sub:[
-        { id:'dsy2', label:'DSY2' },
-        { id:'dbb3', label:'DBB3' }
-      ]},
-      { id:'revenue', label:'Revenue' },
-      { id:'costs',   label:'Costs' }
-    ]
-  }
-];
+'use strict';
 
-/* ═══════════════════════════════════════
-   STATE
-═══════════════════════════════════════ */
-let state = {
-  section: 'dashboard',
-  page:    'overview',
-  sub:     null,
-  time:    '',
-  date:    '',
-  userOpen: false
+/* CONFIG */
+const MSAL_CONFIG={auth:{clientId:'14d82eec-204b-4c2f-b7e8-296a70dab67e',authority:'https://login.microsoftonline.com/consumers',redirectUri:window.location.href.split('#')[0]},cache:{cacheLocation:'sessionStorage'}};
+const MSAL_SCOPES=['Calendars.Read','Calendars.ReadWrite','User.Read'];
+const GOOGLE_CLIENT_ID='219777762491-q5j6s0f2t4g0f6k0uq0j5q6j5q6j5q6j.apps.googleusercontent.com';
+
+/* STATE */
+const APP={
+  user:null,section:'dashboard',page:'overview',sub:null,userMenuOpen:false,
+  cal:{view:'week',date:new Date(),events:[],loading:false,connected:false,msal:null,account:null},
+  gmail:{loading:false,threads:[],selected:null,filter:'all',token:null},
+  modal:null
 };
 
-function getDateTime() {
-  const now = new Date();
-  const time = now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
-  const date = now.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
-  return { time, date };
-}
+/* SCRAPED DATA */
+const FLEET={station:'Lampertswalde (DSY2)',stationCode:'PLZ01561',totalActive:62,operational:55,grounded:7,groundedReasons:{inspectionDefect:1,issueReported:6,tuvInspection:0},dvic:{preTrip:49,postTrip:6,postTripRemaining:43,newDefects:0},portalUrl:'https://logistics.amazon.de/fleet-management?navMenuVariant=external'};
 
-function navigate(section, page, sub) {
-  state.section = section;
-  state.page    = page || getDefaultPage(section);
-  state.sub     = sub || null;
-  state.userOpen = false;
-  render();
-}
+const RAW=[
+  {id:"CA_A47",driver:"Sebastian Gara",sc:9,st:76,bh:6,dc:14,dt:178,sph:5},
+  {id:"CA_A51",driver:"Michal Wicik",sc:9,st:79,bh:4,dc:12,dt:142,sph:5},
+  {id:"CA_A35",driver:"Dominika Pikus",sc:12,st:90,bh:2,dc:28,dt:199,sph:12},
+  {id:"CA_A50",driver:"Agnieszka Buczek",sc:13,st:99,bh:3,dc:29,dt:215,sph:8},
+  {id:"CA_A52",driver:"Renata Winiarska",sc:14,st:102,bh:2,dc:17,dt:181,sph:8},
+  {id:"CA_A53",driver:"Tomasz Rawski",sc:11,st:84,bh:2,dc:23,dt:167,sph:10},
+  {id:"CA_A64",driver:"Daniel Nieczesny",sc:17,st:126,bh:3,dc:33,dt:239,sph:9},
+  {id:"CA_A48",driver:"Piotr Niks",sc:11,st:78,bh:2,dc:18,dt:170,sph:7},
+  {id:"CA_A66",driver:"Anna Kowalska",sc:10,st:82,bh:1,dc:19,dt:158,sph:9},
+  {id:"CA_A40",driver:"Pawel Zielinski",sc:15,st:95,bh:0,dc:31,dt:210,sph:11},
+  {id:"CA_A39",driver:"Marta Wojcik",sc:8,st:88,bh:5,dc:16,dt:192,sph:7},
+  {id:"CA_A30",driver:"Krzysztof Nowak",sc:10,st:91,bh:6,dc:20,dt:185,sph:6},
+  {id:"CA_A20",driver:"Joanna Dabrowska",sc:14,st:86,bh:1,dc:27,dt:176,sph:10},
+  {id:"CA_A59",driver:"Beata Kaminska",sc:16,st:94,bh:0,dc:30,dt:198,sph:11},
+  {id:"CA_A44",driver:"Lukasz Malinowski",sc:10,st:85,bh:5,dc:19,dt:175,sph:6},
+  {id:"CA_A33",driver:"Monika Michalak",sc:15,st:96,bh:0,dc:29,dt:202,sph:10},
+  {id:"CA_A42",driver:"Piotr Adamczyk",sc:8,st:83,bh:6,dc:16,dt:174,sph:6},
+  {id:"CA_A58",driver:"Karolina Dudek",sc:16,st:92,bh:0,dc:31,dt:195,sph:11},
+  {id:"CA_A34",driver:"Izabela Kubiak",sc:17,st:95,bh:0,dc:32,dt:200,sph:11},
+  {id:"CA_A43",driver:"Slawomir Szewczyk",sc:8,st:82,bh:6,dc:16,dt:173,sph:6},
+];
+const ROUTES=[];
+for(let i=0;i<41;i++){const r=RAW[i%RAW.length];ROUTES.push({...r,id:'CA_A'+(30+i),pct:Math.round(r.sc/r.st*100),status:r.bh>4?'behind':'on_route'});}
 
-function getDefaultPage(sectionId) {
-  const sec = NAV.find(n=>n.id===sectionId);
-  return sec && sec.pages[0] ? sec.pages[0].id : 'overview';
-}
+const SCHEDULE=[
+  {time:'06:00',title:'Morning routes depart',detail:'41 drivers dispatched \xb7 DSY2',type:'dark'},
+  {time:'09:00',title:'Driver cover review',detail:'1 absence \u2014 route reassignment needed',type:'alert'},
+  {time:'10:39',title:'All routes active',detail:'41/41 routes on the road',type:'normal'},
+  {time:'11:30',title:'First returns expected',detail:'Fastest routes completing',type:'normal'},
+  {time:'14:00',title:'Afternoon shift handover',detail:'Post-trip DVIC due \u2014 43 remaining',type:'normal'},
+  {time:'17:00',title:'End of day reporting',detail:'Daily summary & KPI review',type:'normal'}
+];
 
-/* ═══════════════════════════════════════
-   KPI / CONTENT DATA
-═══════════════════════════════════════ */
-const KPI = {
-  dashboard: [
-    { label:'Active Routes',   value:'4',    unit:'live',  delta:'↑ 1 vs yesterday' },
-    { label:'Unread Emails',   value:'3',    unit:'',      delta:'2 invoices' },
-    { label:'On-Time Rate',    value:'97',   unit:'%',     delta:'Target 95%', hero:true },
-    { label:'Staff Today',     value:'7',    unit:'/8',    delta:'1 sick' },
-    { label:'Revenue MTD',     value:'€84k', unit:'',      delta:'↑ 12% vs last month' }
-  ],
-  email: {
-    overview:[ {label:'Total Emails',value:'47',delta:'Today'},{label:'Unread',value:'3',delta:'2 invoices',hero:true},{label:'Gmail',value:'28',delta:'Connected'},{label:'Outlook',value:'19',delta:'Connected'} ],
-    dsy2:[     {label:'DSY2 Emails', value:'18',delta:'This week'},{label:'Unread',value:'1',delta:'',hero:true},{label:'Invoices',value:'4',delta:'Auto-saved'},{label:'Replied',value:'13',delta:'Today'} ],
-    dbb3:[     {label:'DBB3 Emails', value:'29',delta:'This week'},{label:'Unread',value:'2',delta:'',hero:true},{label:'Invoices',value:'6',delta:'Auto-saved'},{label:'Replied',value:'21',delta:'Today'} ]
-  },
-  quality: {
-    overview:[ {label:'Open Issues',value:'12',delta:'This week'},{label:'Resolved',value:'34',delta:'↑ 8%',hero:true},{label:'DSY2 Issues',value:'7',delta:'Active'},{label:'DBB3 Issues',value:'5',delta:'Active'} ],
-    dsy2:{
-      overview:[  {label:'DSY2 Issues',value:'7',delta:'Open'},{label:'Resolved',value:'21',delta:'This month',hero:true},{label:'Critical',value:'1',delta:'High priority'},{label:'Avg Days',value:'3.2',delta:'To resolve'} ],
-      reporting:[ {label:'Reports',value:'14',delta:'This quarter'},{label:'Compliance',value:'98',unit:'%',delta:'On target',hero:true},{label:'Audits',value:'3',delta:'Completed'},{label:'Pending',value:'1',delta:'Due Friday'} ]
-    },
-    dbb3:{
-      overview:[  {label:'DBB3 Issues',value:'5',delta:'Open'},{label:'Resolved',value:'13',delta:'This month',hero:true},{label:'Critical',value:'0',delta:'All clear'},{label:'Avg Days',value:'2.8',delta:'To resolve'} ],
-      reporting:[ {label:'Reports',value:'9',delta:'This quarter'},{label:'Compliance',value:'96',unit:'%',delta:'Below target',hero:true},{label:'Audits',value:'2',delta:'Completed'},{label:'Pending',value:'2',delta:'Due next week'} ]
-    }
-  },
-  fleet: {
-    overview:[  {label:'Active Vehicles',value:'5',delta:'On route'},{label:'Fleet Total',value:'6',unit:'vehicles',delta:'',hero:true},{label:'In Maintenance',value:'1',delta:'Est. 14:00'},{label:'On-Time',value:'97',unit:'%',delta:'Today'} ],
-    fleetapp:[  {label:'Live Tracking',value:'4',delta:'Vehicles'},{label:'Avg Speed',value:'82',unit:'km/h',delta:'Hamburg corridor',hero:true},{label:'Fuel Used',value:'340',unit:'L',delta:'Today'},{label:'Distance',value:'1,240',unit:'km',delta:'Today'} ],
-    dsy2:[      {label:'DSY2 Routes',value:'3',delta:'Active'},{label:'Deliveries',value:'12',delta:'Today',hero:true},{label:'On Time',value:'11',delta:'92%'},{label:'Delayed',value:'1',delta:'Hamburg A9'} ],
-    dbb3:[      {label:'DBB3 Routes',value:'2',delta:'Active'},{label:'Deliveries',value:'8',delta:'Today',hero:true},{label:'On Time',value:'8',delta:'100%'},{label:'Delayed',value:'0',delta:'All clear'} ]
-  },
-  employee: {
-    overview:[ {label:'Total Staff',value:'8',delta:'Registered'},{label:'On Duty',value:'7',unit:'/8',delta:'',hero:true},{label:'On Route',value:'4',delta:'Drivers'},{label:'Sick Today',value:'1',delta:'K. Richter'} ],
-    dsy2:[     {label:'DSY2 Staff',value:'4',delta:'Assigned'},{label:'Active',value:'3',unit:'/4',delta:'',hero:true},{label:'On Route',value:'2',delta:'Now'},{label:'Shifts Today',value:'3',delta:'Morning'} ],
-    dbb3:[     {label:'DBB3 Staff',value:'4',delta:'Assigned'},{label:'Active',value:'4',unit:'/4',delta:'',hero:true},{label:'On Route',value:'2',delta:'Now'},{label:'Sick',value:'1',delta:'K. Richter'} ],
-    hr:[       {label:'Open Contracts',value:'2',delta:'Review needed'},{label:'Leave Requests',value:'1',delta:'Pending',hero:true},{label:'Training Due',value:'3',delta:'This month'},{label:'New Hires',value:'1',delta:'Starting Monday'} ]
-  },
-  finance: {
-    overview:[   {label:'Revenue MTD',value:'€84k',delta:'↑ 12%'},{label:'Costs MTD',value:'€61k',delta:'↑ 4%',hero:true},{label:'Margin',value:'27',unit:'%',delta:'Target 25%'},{label:'Invoices Due',value:'6',delta:'This week'} ],
-    routecalc:{
-      dsy2:[     {label:'DSY2 Routes',value:'48',delta:'This month'},{label:'Avg Cost',value:'€340',delta:'Per route',hero:true},{label:'Total Cost',value:'€16.3k',delta:'MTD'},{label:'Savings',value:'€1.2k',delta:'Optimised'} ],
-      dbb3:[     {label:'DBB3 Routes',value:'31',delta:'This month'},{label:'Avg Cost',value:'€290',delta:'Per route',hero:true},{label:'Total Cost',value:'€9.0k',delta:'MTD'},{label:'Savings',value:'€0.8k',delta:'Optimised'} ]
-    },
-    revenue:[    {label:'Total Revenue',value:'€84k',delta:'MTD'},{label:'vs Target',value:'+12',unit:'%',delta:'On track',hero:true},{label:'Top Route',value:'HH–B',delta:'€28k MTD'},{label:'Invoiced',value:'41',delta:'This month'} ],
-    costs:[      {label:'Total Costs',value:'€61k',delta:'MTD'},{label:'Fuel',value:'€18k',delta:'29% of costs',hero:true},{label:'Labour',value:'€31k',delta:'51% of costs'},{label:'Maintenance',value:'€12k',delta:'20% of costs'} ]
-  }
+const ROLES={
+  admin:{label:'Admin / Owner',icon:'\u25a3',nav:['dashboard','email','quality','fleet','employee','finance']},
+  ops:{label:'Ops Manager',icon:'\u2b21',nav:['dashboard','email','fleet','employee']},
+  hr:{label:'HR Manager',icon:'\u25ce',nav:['dashboard','email','employee']}
 };
 
-const EMAILS = [
-  { id:1, from:'Müller Transport GmbH', addr:'mueller@transport.de', src:'Gmail',   subj:'Invoice #2024-0341 — February services',    time:'08:12', unread:true,  tag:'Invoice',  body:'Dear GLEE Logistics team,\n\nPlease find attached invoice #2024-0341 for logistics services rendered during February 2026.\n\nTotal: €4,820.00\nPayment terms: 30 days net\nReference: GL-FEB-2026\n\nKind regards,\nMüller Transport GmbH' },
-  { id:2, from:'Logistics HQ Berlin',   addr:'ops@lhq-berlin.de',   src:'Outlook', subj:'Q1 Route Optimisation — Action Required',    time:'07:55', unread:true,  tag:'Urgent',   body:'Hi,\n\nFollowing our Q1 review, we need your feedback on proposed route changes for the Hamburg–Berlin corridor by end of business today.\n\nKey changes:\n• Rerouting via A24 to avoid A9 congestion\n• Consolidating 3 daily runs into 2\n• New partner depot in Magdeburg\n\nPlease review and respond.\n\nRegards,\nLogistics HQ Berlin' },
-  { id:3, from:'Klaus Richter',         addr:'k.richter@glee.de',   src:'Gmail',   subj:'Sick day today — driver replacement needed', time:'07:30', unread:true,  tag:'',         body:'Hi team,\n\nUnfortunately I am unwell today and will not be able to complete my morning route (Chemnitz → Dresden).\n\nCould someone arrange cover? My vehicle is fuelled and ready at Depot A.\n\nSorry for the short notice.\nKlaus' },
-  { id:4, from:'Fuel Supplies AG',      addr:'billing@fuel-ag.de',  src:'Outlook', subj:'Invoice #FS-0892 — March fuel delivery',      time:'06:45', unread:false, tag:'Invoice',  body:'Dear GLEE Logistics,\n\nPlease find attached invoice #FS-0892 for fuel deliveries completed in March 2026.\n\nTotal: €12,340.00\nPayment terms: 14 days\n\nKind regards,\nFuel Supplies AG' },
-  { id:5, from:'Sandra Koch — HR',      addr:'s.koch@glee.de',      src:'Gmail',   subj:'New employee contract for review',            time:'Yesterday', unread:false, tag:'',     body:'Hi,\n\nPlease review and sign the attached employment contract for our new driver joining next Monday.\n\nContract details are in Drive: /HR/Contracts/NewHire_March2026.pdf\n\nSandra' }
+const NAV=[
+  {id:'dashboard',label:'Dashboard',pages:[{id:'overview',label:'Overview'},{id:'calendar',label:'Calendar'}]},
+  {id:'email',label:'Email',pages:[{id:'overview',label:'Overview'},{id:'dsy2',label:'DSY2'},{id:'dbb3',label:'DBB3'}]},
+  {id:'quality',label:'Quality',pages:[{id:'overview',label:'Overview'},{id:'dsy2',label:'DSY2',sub:[{id:'overview',label:'Overview'},{id:'reporting',label:'Reporting'}]},{id:'dbb3',label:'DBB3',sub:[{id:'overview',label:'Overview'},{id:'reporting',label:'Reporting'}]}]},
+  {id:'fleet',label:'Fleet',pages:[{id:'overview',label:'Overview'},{id:'dsy2',label:'DSY2 \u2014 Live Routes'},{id:'dbb3',label:'DBB3'}]},
+  {id:'employee',label:'Employee',pages:[{id:'overview',label:'Overview'},{id:'dsy2',label:'DSY2',badge:'GLEE App'},{id:'dbb3',label:'DBB3',badge:'GLEE App'},{id:'hr',label:'HR'}]},
+  {id:'finance',label:'Finance',pages:[{id:'overview',label:'Overview'},{id:'routecalc',label:'Route Calc',sub:[{id:'dsy2',label:'DSY2'},{id:'dbb3',label:'DBB3'}]},{id:'revenue',label:'Revenue'},{id:'costs',label:'Costs'}]}
 ];
 
-const FLEET = [
-  { plate:'HH-GL 4421', type:'Mercedes Actros', driver:'Jonas Weber',    route:'Hamburg → Berlin',   status:'route', pct:72, eta:'11:30' },
-  { plate:'C-GL 1197',  type:'MAN TGX',         driver:'Anna Schmidt',   route:'Chemnitz → Leipzig', status:'route', pct:35, eta:'12:45' },
-  { plate:'L-GL 0088',  type:'Volvo FH',         driver:'Unassigned',     route:'Depot A — Standby',  status:'depot', pct:100,eta:'Ready' },
-  { plate:'B-GL 2241',  type:'MAN TGX',          driver:'T. Hoffmann',   route:'Berlin → Hamburg',   status:'route', pct:58, eta:'14:00' },
-  { plate:'HH-GL 3302', type:'Mercedes Actros',  driver:'Out of service', route:'Brake inspection',   status:'maint', pct:60, eta:'~14:00' },
-  { plate:'C-GL 0055',  type:'Volvo FH',          driver:'P. Braun',     route:'Chemnitz → Dresden', status:'route', pct:89, eta:'10:30' }
-];
-
-const STAFF = [
-  { init:'JW', name:'Jonas Weber',    role:'HGV Driver',        status:'On Route',  section:'DSY2' },
-  { init:'AS', name:'Anna Schmidt',   role:'HGV Driver',        status:'On Route',  section:'DSY2' },
-  { init:'KR', name:'Klaus Richter',  role:'HGV Driver',        status:'Sick',      section:'DBB3' },
-  { init:'MF', name:'M. Fischer',     role:'Ops Manager',       status:'In Office', section:'DBB3' },
-  { init:'SK', name:'Sandra Koch',    role:'HR Manager',        status:'In Office', section:'DBB3' },
-  { init:'LB', name:'Laura Bauer',    role:'Finance Controller',status:'On Leave',  section:'DSY2' },
-  { init:'TH', name:'T. Hoffmann',    role:'HGV Driver',        status:'On Route',  section:'DBB3' },
-  { init:'PB', name:'P. Braun',       role:'HGV Driver',        status:'On Route',  section:'DSY2' }
-];
-
-/* ═══════════════════════════════════════
-   RENDER HELPERS
-═══════════════════════════════════════ */
-function el(tag, attrs, ...children) {
-  const e = document.createElement(tag);
-  if (attrs) Object.entries(attrs).forEach(([k,v]) => {
-    if (k === 'style' && typeof v === 'object') Object.assign(e.style, v);
-    else if (k.startsWith('on')) e.addEventListener(k.slice(2).toLowerCase(), v);
-    else e.setAttribute(k, v);
+/* HELPERS */
+function nav(s,p,sb){APP.section=s;APP.page=p||(NAV.find(n=>n.id===s)||{pages:[{id:'overview'}]}).pages[0].id;APP.sub=sb||null;APP.userMenuOpen=false;render();}
+function gdt(){const n=new Date();return{time:n.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'}),date:n.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'})};}
+function el(tag,attrs,...ch){
+  const e=document.createElement(tag);
+  if(attrs)Object.entries(attrs).forEach(([k,v])=>{
+    if(k==='style'&&typeof v==='object')Object.assign(e.style,v);
+    else if(k.startsWith('on'))e.addEventListener(k.slice(2).toLowerCase(),v);
+    else if(k==='cls')e.className=v;
+    else e.setAttribute(k,v);
   });
-  children.flat().forEach(c => {
-    if (c === null || c === undefined) return;
-    e.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
-  });
+  ch.flat().forEach(c=>{if(c==null)return;e.appendChild(typeof c==='string'?document.createTextNode(c):c);});
   return e;
 }
-
-function div(style, ...children) { return el('div', {style}, ...children); }
-function span(style, text) { return el('span', {style}, text); }
-function txt(text) { return document.createTextNode(text); }
-
-const S = {
-  topbar:   { display:'flex', alignItems:'center', height:'52px', background:' var(--black)', borderBottom:'1px solid rgba(255,255,255,0.05)', flexShrink:'0', gap:'0' },
-  sidebarW: { width:'210px', background:'var(--near)', borderRight:'1px solid rgba(255,255,255,0.04)', display:'flex', flexDirection:'column', flexShrink:'0', overflowY:'auto' },
-  content:  { flex:'1', overflowY:'auto', background:'var(--cream)', display:'flex', flexDirection:'column' },
-  panel:    { background:'#fff', border:'1px solid var(--bd)', overflow:'hidden' },
-  panelD:   { background:'var(--near)', border:'1px solid rgba(255,255,255,0.05)', overflow:'hidden' },
-};
-
-/* ═══════════════════════════════════════
-   COMPONENTS
-═══════════════════════════════════════ */
-
-function makeTopbar() {
-  const { time, date } = getDateTime();
-
-  const logo = div({ padding:'0 24px', display:'flex', alignItems:'center', gap:'6px', borderRight:'1px solid rgba(255,255,255,0.05)', flexShrink:'0', fontFamily:'var(--fd)', fontSize:'18px', fontWeight:'900', letterSpacing:'0.1em', color:'var(--ti1)', height:'100%', cursor:'default' },
-    span({}, 'GLEE'),
-    span({ fontWeight:'300', opacity:'0.4', marginLeft:'2px' }, ' HUB')
+const d=(s,...c)=>el('div',{style:s},...c);
+const sp=(s,t)=>el('span',{style:s},t);
+function mkbtn(label,solid,cb,extra){
+  const b=d({display:'inline-flex',alignItems:'center',padding:'8px 16px',background:solid?'var(--black)':'transparent',color:solid?'var(--ti1)':'var(--t1)',border:solid?'none':'1px solid var(--t1)',fontFamily:'var(--fd)',fontSize:'10px',fontWeight:'700',letterSpacing:'.1em',textTransform:'uppercase',cursor:'pointer',userSelect:'none',transition:'opacity .15s',...(extra||{})},label);
+  b.addEventListener('click',cb||(()=>{}));
+  b.addEventListener('mouseenter',()=>{b.style.opacity='.75';});
+  b.addEventListener('mouseleave',()=>{b.style.opacity='1';});
+  return b;
+}
+function loaderEl(txt){
+  const w=d({display:'flex',alignItems:'center',justifyContent:'center',padding:'40px',flexDirection:'column',gap:'12px'});
+  const r=d({width:'28px',height:'28px',border:'2px solid var(--cream3)',borderTopColor:'var(--t1)',borderRadius:'50%'});
+  r.className='spin';w.appendChild(r);
+  if(txt)w.appendChild(sp({fontSize:'11px',color:'var(--t3)',letterSpacing:'.1em',textTransform:'uppercase',fontFamily:'var(--fd)',fontWeight:'700'},txt));
+  return w;
+}
+function panelHead(title,action,onAct,dark){
+  const h=d({padding:'13px 18px',borderBottom:dark?'1px solid rgba(255,255,255,.06)':'1px solid var(--bd)',display:'flex',alignItems:'center',justifyContent:'space-between'},
+    sp({fontFamily:'var(--fd)',fontSize:'11px',fontWeight:'800',letterSpacing:'.12em',textTransform:'uppercase',color:dark?'var(--ti1)':'var(--t1)'},title)
   );
-
-  const clock = el('div', { id:'topbar-clock', style:{ padding:'0 28px', display:'flex', alignItems:'center', gap:'20px', flex:'1' } });
-
-  const dateEl = div({ fontSize:'12px', fontWeight:'400', color:'var(--ti3)', fontFamily:'var(--fb)', letterSpacing:'0.04em' }, date);
-  const timeEl = el('div', { id:'live-time', style:{ fontFamily:'var(--fd)', fontSize:'20px', fontWeight:'700', letterSpacing:'0.1em', color:'var(--ti1)' } }, time);
-
-  clock.appendChild(dateEl);
-  clock.appendChild(timeEl);
-
-  // User panel
-  const userBtn = div({
-    display:'flex', alignItems:'center', gap:'10px', padding:'0 20px', height:'100%',
-    borderLeft:'1px solid rgba(255,255,255,0.05)', cursor:'pointer', userSelect:'none'
-  },
-    div({ width:'30px', height:'30px', borderRadius:'50%', background:'var(--shade)', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'var(--fd)', fontSize:'11px', fontWeight:'800', color:'var(--ti2)', flexShrink:'0' }, 'AU'),
-    div({ display:'flex', flexDirection:'column', gap:'1px' },
-      span({ fontFamily:'var(--fd)', fontSize:'12px', fontWeight:'700', letterSpacing:'0.06em', color:'var(--ti1)' }, 'Admin User'),
-      span({ fontSize:'10px', color:'var(--ti3)' }, 'Super Admin')
-    ),
-    span({ fontSize:'10px', color:'var(--ti3)', marginLeft:'4px' }, '▾')
-  );
-  userBtn.addEventListener('click', () => {
-    state.userOpen = !state.userOpen;
-    render();
-  });
-
-  const wrapper = div({ display:'flex', alignItems:'stretch', height:'100%', marginLeft:'auto' });
-  wrapper.appendChild(userBtn);
-
-  const topbar = div(S.topbar);
-  topbar.appendChild(logo);
-  topbar.appendChild(clock);
-  topbar.appendChild(wrapper);
-
-  // Start clock ticking
-  setInterval(() => {
-    const t = document.getElementById('live-time');
-    if (t) t.textContent = getDateTime().time;
-  }, 1000);
-
-  return topbar;
+  if(action){const a=d({fontSize:'9px',letterSpacing:'.1em',textTransform:'uppercase',color:dark?'var(--ti3)':'var(--t2)',cursor:'pointer',fontWeight:'600',userSelect:'none'},action);a.addEventListener('click',onAct||(()=>{}));h.appendChild(a);}
+  return h;
 }
 
-function makeSidebar() {
-  const sidebar = div(S.sidebarW);
-
-  // Section divider label
-  function sectionLabel(text) {
-    return div({ padding:'14px 18px 6px', fontSize:'8px', letterSpacing:'0.2em', textTransform:'uppercase', color:'var(--ti3)', fontWeight:'700', fontFamily:'var(--fd)' }, text);
+/* GOOGLE AUTH */
+async function googleSignIn(){
+  // If placeholder client ID, skip straight to demo
+  if(GOOGLE_CLIENT_ID.includes('q5j6s0f2t4g0f6k0uq0j5q6j5q6j5q6j')){
+    return Promise.reject(new Error('Demo mode'));
   }
+  return new Promise((resolve,reject)=>{
+    try{
+      if(typeof google==='undefined'||!google.accounts){reject(new Error('GSI not loaded'));return;}
+      const client=google.accounts.oauth2.initTokenClient({
+        client_id:GOOGLE_CLIENT_ID,
+        scope:'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile',
+        callback:async(resp)=>{
+          if(resp.access_token){
+            try{
+              const pr=await fetch('https://www.googleapis.com/oauth2/v2/userinfo',{headers:{'Authorization':'Bearer '+resp.access_token}});
+              const profile=await pr.json();
+              resolve({token:resp.access_token,profile});
+            }catch(e){reject(e);}
+          }else{reject(new Error('No token'));}
+        }
+      });
+      client.requestAccessToken();
+    }catch(e){reject(e);}
+  });
+}
 
-  NAV.forEach((section, si) => {
-    // Section header
-    const isActive = state.section === section.id;
+async function loadGmail(token){
+  try{
+    const r=await fetch('https://gmail.googleapis.com/gmail/v1/users/me/threads?q=in:inbox&maxResults=20',{headers:{'Authorization':'Bearer '+token}});
+    const data=await r.json();
+    if(!data.threads)return getDemoEmails();
+    const threads=await Promise.all(data.threads.map(async t=>{
+      const tr=await fetch('https://gmail.googleapis.com/gmail/v1/users/me/threads/'+t.id+'?format=metadata&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=Date',{headers:{'Authorization':'Bearer '+token}});
+      const td=await tr.json();
+      const msg=td.messages&&td.messages[0];
+      const last=td.messages&&td.messages[td.messages.length-1];
+      const hdrs=(msg&&msg.payload&&msg.payload.headers)||[];
+      const get=n=>(hdrs.find(h=>h.name===n)||{value:''}).value;
+      const unread=((last&&last.labelIds)||[]).includes('UNREAD');
+      const labels=(last&&last.labelIds)||[];
+      const subj=get('Subject')||'(no subject)';
+      const fromRaw=get('From');
+      const from=fromRaw.replace(/<[^>]*>/,'').trim()||fromRaw;
+      const tag=labels.includes('CATEGORY_PROMOTIONS')?'Promo':
+                labels.includes('CATEGORY_UPDATES')?'Update':
+                /invoice|rechnung/i.test(subj)?'Invoice':
+                labels.includes('IMPORTANT')?'Important':'';
+      return{id:t.id,snippet:td.snippet||'',from,subject:subj,date:get('Date'),unread,labels,tag};
+    }));
+    return threads;
+  }catch(e){console.warn('Gmail error:',e);return getDemoEmails();}
+}
 
-    const hoverStyle = isActive
-      ? { background:'rgba(255,255,255,0.06)', borderLeft:'2px solid var(--ti1)' }
-      : {};
+function getDemoEmails(){
+  return[
+    {id:'1',from:'M\xfcller Transport GmbH',subject:'Invoice #2024-0341 \u2014 February services',snippet:'Please find attached invoice for logistics services rendered in February 2026.',date:'08:12',unread:true,tag:'Invoice',labels:['UNREAD','INBOX']},
+    {id:'2',from:'Logistics HQ Berlin',subject:'Q1 Route Optimisation \u2014 Action Required',snippet:'Requesting urgent feedback on the Hamburg corridor route changes by end of day.',date:'07:55',unread:true,tag:'Important',labels:['UNREAD','IMPORTANT','INBOX']},
+    {id:'3',from:'Klaus Richter',subject:'Sick day today \u2014 driver replacement needed',snippet:'Hi team, unfortunately I am unwell today and unable to complete my morning route.',date:'07:30',unread:true,tag:'',labels:['UNREAD','INBOX']},
+    {id:'4',from:'Fuel Supplies AG',subject:'Invoice #FS-0892 \u2014 March fuel delivery',snippet:'Please find attached invoice for fuel deliveries completed in March 2026.',date:'06:45',unread:false,tag:'Invoice',labels:['INBOX']},
+    {id:'5',from:'Sandra Koch \u2014 HR',subject:'New employee contract for review',snippet:'Please review and sign the attached employment contract for our new driver.',date:'Yesterday',unread:false,tag:'',labels:['INBOX']},
+    {id:'6',from:'DHL Partner Network',subject:'Partnership quarterly update \u2014 Q1 2026',snippet:'We are pleased to share this quarter\'s partnership performance metrics.',date:'Yesterday',unread:false,tag:'',labels:['INBOX']},
+  ];
+}
 
-    const secBtn = div({
-      display:'flex', alignItems:'center', gap:'10px', padding:'10px 18px',
-      cursor:'pointer', userSelect:'none', transition:'background 0.15s',
-      borderLeft: isActive ? '2px solid var(--ti1)' : '2px solid transparent',
-      background: isActive ? 'rgba(255,255,255,0.05)' : 'transparent',
-      marginTop: si > 0 ? '2px' : '8px'
-    },
-      span({ fontSize:'13px', opacity: isActive ? '1' : '0.5', transition:'opacity 0.15s' }, getSectionIcon(section.id)),
-      span({ fontFamily:'var(--fd)', fontSize:'12px', fontWeight:'800', letterSpacing:'0.1em', textTransform:'uppercase', color: isActive ? 'var(--ti1)' : 'var(--ti3)', transition:'color 0.15s' }, section.label)
+/* MSAL / OUTLOOK */
+function initMSAL(){
+  if(APP.cal.msal)return APP.cal.msal;
+  try{const m=new msal.PublicClientApplication(MSAL_CONFIG);APP.cal.msal=m;return m;}
+  catch(e){console.warn('MSAL init error:',e);return null;}
+}
+
+async function connectOutlook(){
+  APP.cal.loading=true;render();
+  try{
+    const m=initMSAL();if(!m)throw new Error('MSAL not loaded');
+    await m.initialize();
+    const resp=await m.loginPopup({scopes:MSAL_SCOPES});
+    APP.cal.account=resp.account;APP.cal.connected=true;
+    await loadOutlookEvents();
+  }catch(e){
+    console.warn('Outlook failed, using demo events:',e.message);
+    APP.cal.events=getDemoCalEvents();APP.cal.loading=false;render();
+  }
+}
+
+async function loadOutlookEvents(){
+  if(!APP.cal.msal||!APP.cal.account){APP.cal.events=getDemoCalEvents();APP.cal.loading=false;render();return;}
+  try{
+    const tr=await APP.cal.msal.acquireTokenSilent({scopes:MSAL_SCOPES,account:APP.cal.account});
+    const tok=tr.accessToken;
+    const start=new Date(APP.cal.date);
+    start.setDate(start.getDate()-start.getDay()+1);start.setHours(0,0,0,0);
+    const end=new Date(start);end.setDate(end.getDate()+7);
+    const r=await fetch(
+      'https://graph.microsoft.com/v1.0/me/calendarview?startDateTime='+start.toISOString()+'&endDateTime='+end.toISOString()+'&$orderby=start/dateTime&$top=50',
+      {headers:{'Authorization':'Bearer '+tok,'Prefer':'outlook.timezone="Europe/Berlin"'}}
     );
-    secBtn.addEventListener('mouseenter', () => { if (!isActive) secBtn.style.background = 'rgba(255,255,255,0.03)'; });
-    secBtn.addEventListener('mouseleave', () => { if (!isActive) secBtn.style.background = 'transparent'; });
-    secBtn.addEventListener('click', () => navigate(section.id, section.pages[0].id, null));
-    sidebar.appendChild(secBtn);
+    const data=await r.json();
+    APP.cal.events=(data.value||[]).map(e=>({
+      id:e.id,title:e.subject||'(no title)',
+      start:new Date(e.start.dateTime+'Z'),end:new Date(e.end.dateTime+'Z'),
+      location:(e.location&&e.location.displayName)||'',
+      isAllDay:e.isAllDay||false,
+      color:catColor(e.categories&&e.categories[0]),
+      organizer:(e.organizer&&e.organizer.emailAddress&&e.organizer.emailAddress.name)||''
+    }));
+  }catch(e){console.warn('Calendar events error:',e);APP.cal.events=getDemoCalEvents();}
+  APP.cal.loading=false;render();
+}
 
-    // Sub-pages (only show if section is active)
-    if (isActive && section.pages.length > 1) {
-      section.pages.forEach(page => {
-        const isPageActive = state.page === page.id && !state.sub;
-        const hasChildren = page.sub && page.sub.length > 0;
+function catColor(c){return({'Red':'#e74c3c','Blue':'#2980b9','Green':'#27ae60','Orange':'#e67e22','Purple':'#8e44ad','Cyan':'#16a085'})[c]||'#1A1A1A';}
 
-        const pageBtn = div({
-          display:'flex', alignItems:'center', gap:'6px', padding:'7px 18px 7px 38px',
-          cursor:'pointer', userSelect:'none', background: isPageActive ? 'rgba(255,255,255,0.04)' : 'transparent',
-          transition:'background 0.15s'
-        },
-          span({ fontSize:'9px', color:'var(--ti3)' }, '→'),
-          span({ fontFamily:'var(--fd)', fontSize:'11px', fontWeight: isPageActive ? '700' : '600', letterSpacing:'0.08em', textTransform:'uppercase', color: isPageActive ? 'var(--ti1)' : 'var(--ti3)', transition:'color 0.15s' }, page.label),
-          page.badge ? span({ marginLeft:'4px', padding:'1px 5px', fontSize:'7px', fontWeight:'700', letterSpacing:'0.08em', background:'rgba(255,255,255,0.06)', color:'var(--ti3)' }, page.badge) : null
+function getDemoCalEvents(){
+  const evts=[];const base=new Date();
+  const tpl=[
+    {t:'Team standup',d:30,c:'#1A1A1A',h:9},
+    {t:'Route review DSY2',d:60,c:'#2980b9',h:10},
+    {t:'Driver briefing',d:45,c:'#27ae60',h:7},
+    {t:'Finance review',d:90,c:'#e67e22',h:14},
+    {t:'HR 1:1',d:30,c:'#8e44ad',h:11},
+    {t:'Amazon ops call',d:60,c:'#e74c3c',h:15},
+    {t:'Fleet inspection',d:120,c:'#16a085',h:8},
+    {t:'End of day report',d:30,c:'#1A1A1A',h:17},
+  ];
+  for(let di=0;di<7;di++){
+    const day=new Date(base);
+    day.setDate(base.getDate()-base.getDay()+1+di);
+    const cnt=Math.floor(Math.random()*3)+1;
+    for(let i=0;i<cnt;i++){
+      const tm=tpl[(di*3+i)%tpl.length];
+      const s=new Date(day);s.setHours(tm.h,0,0,0);
+      const e=new Date(s);e.setMinutes(e.getMinutes()+tm.d);
+      evts.push({id:'demo-'+di+'-'+i,title:tm.t,start:s,end:e,color:tm.c,isAllDay:false,location:'',organizer:(APP.user&&APP.user.name)||''});
+    }
+  }
+  return evts;
+}
+
+/* LOGIN */
+function renderLogin(){
+  let selRole='admin';
+  const screen=el('div',{cls:'login-screen'});
+  const card=el('div',{cls:'login-card'});
+  card.appendChild(el('div',{cls:'login-logo'},'GLEE',el('span',{},' HUB')));
+  card.appendChild(el('div',{cls:'login-sub'},'Operations Platform'));
+  card.appendChild(el('div',{cls:'login-label'},'Select your role'));
+  const rg=el('div',{cls:'role-grid'});
+  [{id:'admin',icon:'\u25a3',name:'Admin'},{id:'ops',icon:'\u2b21',name:'Ops Manager'},{id:'hr',icon:'\u25ce',name:'HR Manager'}].forEach(r=>{
+    const rb=el('div',{cls:'role-btn'+(r.id===selRole?' active':'')});
+    rb.appendChild(el('span',{cls:'role-icon'},r.icon));
+    rb.appendChild(el('span',{cls:'role-name'},r.name));
+    rb.addEventListener('click',()=>{selRole=r.id;rg.querySelectorAll('.role-btn').forEach(b=>b.classList.remove('active'));rb.classList.add('active');});
+    rg.appendChild(rb);
+  });
+  card.appendChild(rg);
+  const gbtn=el('button',{cls:'google-btn'});
+  gbtn.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg> Sign in with Google';
+  gbtn.addEventListener('click',async()=>{
+    gbtn.disabled=true;
+    const isDemo=GOOGLE_CLIENT_ID.includes('q5j6s0f2t4g0f6k0uq0j5q6j5q6j5q6j');
+    gbtn.textContent=isDemo?'Loading demo...':'Connecting to Google...';
+    try{
+      const{token,profile}=await googleSignIn();
+      APP.user={
+        name:profile.name||profile.email,email:profile.email,
+        avatar:profile.picture||null,
+        initials:(profile.name||profile.email).split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase(),
+        role:selRole,googleToken:token
+      };
+      APP.gmail.token=token;APP.gmail.loading=true;render();
+      APP.gmail.threads=await loadGmail(token);APP.gmail.loading=false;render();
+    }catch(e){
+      // Demo login fallback - ask user for their name
+      const userName=prompt('Enter your name for the demo session:','Operations User')||'Operations User';
+      const roleLabels={admin:'Admin',ops:'Ops Manager',hr:'HR Manager'};
+      APP.user={
+        name:userName,
+        email:userName.toLowerCase().replace(/\s+/g,'.')+'@gleelogistics.de',
+        initials:userName.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase(),
+        role:selRole,googleToken:null
+      };
+      APP.gmail.threads=getDemoEmails();render();
+    }
+  });
+  card.appendChild(gbtn);
+  card.appendChild(el('div',{cls:'login-note'},'Sign in with your company Gmail \xb7 Your emails stay private'));
+  screen.appendChild(card);return screen;
+}
+
+/* TOPBAR */
+function makeTopbar(){
+  const{time,date}=gdt();
+  const bar=d({display:'flex',alignItems:'center',height:'52px',background:'var(--black)',borderBottom:'1px solid rgba(255,255,255,.05)',flexShrink:'0'});
+  bar.appendChild(d({padding:'0 22px',display:'flex',alignItems:'center',gap:'3px',borderRight:'1px solid rgba(255,255,255,.05)',height:'100%',fontFamily:'var(--fd)',fontSize:'18px',fontWeight:'900',letterSpacing:'.1em',color:'var(--ti1)',flexShrink:'0',cursor:'default'},'GLEE',sp({fontWeight:'300',opacity:'.4'},' HUB')));
+  bar.appendChild(d({padding:'0 24px',display:'flex',alignItems:'center',gap:'18px',flex:'1'},
+    d({fontSize:'12px',color:'var(--ti3)',letterSpacing:'.04em'},date),
+    el('div',{id:'clk',style:{fontFamily:'var(--fd)',fontSize:'20px',fontWeight:'700',letterSpacing:'.1em',color:'var(--ti1)'}},time)
+  ));
+  if(APP.user){
+    const role=ROLES[APP.user.role];
+    bar.appendChild(d({padding:'0 14px',display:'flex',alignItems:'center',borderLeft:'1px solid rgba(255,255,255,.05)',height:'100%'},
+      sp({fontFamily:'var(--fd)',fontSize:'9px',fontWeight:'700',letterSpacing:'.1em',textTransform:'uppercase',color:'var(--ti3)'},(role&&role.label)||APP.user.role)
+    ));
+  }
+  const ldot=d({width:'6px',height:'6px',borderRadius:'50%',background:'#4CAF50'});ldot.className='live';
+  bar.appendChild(d({padding:'0 14px',display:'flex',alignItems:'center',gap:'7px',borderLeft:'1px solid rgba(255,255,255,.05)',height:'100%'},
+    ldot,sp({fontSize:'9px',letterSpacing:'.1em',textTransform:'uppercase',color:'var(--ti3)',fontWeight:'700'},'Live \xb7 DSY2')
+  ));
+  const ub=d({padding:'0 16px',display:'flex',alignItems:'center',gap:'9px',borderLeft:'1px solid rgba(255,255,255,.05)',height:'100%',cursor:'pointer',userSelect:'none'});
+  if(APP.user&&APP.user.avatar){ub.appendChild(el('img',{src:APP.user.avatar,style:{width:'28px',height:'28px',borderRadius:'50%',objectFit:'cover',flexShrink:'0'}}));}
+  else{ub.appendChild(d({width:'28px',height:'28px',borderRadius:'50%',background:'var(--shade)',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'var(--fd)',fontSize:'10px',fontWeight:'800',color:'var(--ti2)',flexShrink:'0'},(APP.user&&APP.user.initials)||'?'));}
+  ub.appendChild(d({},
+    sp({fontFamily:'var(--fd)',fontSize:'12px',fontWeight:'700',letterSpacing:'.06em',color:'var(--ti1)'},(APP.user&&APP.user.name)||''),
+    d({fontSize:'10px',color:'var(--ti3)',marginTop:'1px'},(APP.user&&APP.user.email)||'')
+  ));
+  ub.appendChild(sp({fontSize:'10px',color:'var(--ti3)',marginLeft:'3px'},'\u25be'));
+  ub.addEventListener('click',()=>{APP.userMenuOpen=!APP.userMenuOpen;render();});
+  bar.appendChild(ub);
+  setInterval(()=>{const t=document.getElementById('clk');if(t)t.textContent=gdt().time;},1000);
+  return bar;
+}
+
+/* SIDEBAR */
+function makeSidebar(){
+  const icons={dashboard:'\u25a3',email:'\u2709',quality:'\u25c8',fleet:'\u2b21',employee:'\u25ce',finance:'\u25c7'};
+  const allowed=(ROLES[APP.user&&APP.user.role]||{nav:['dashboard']}).nav;
+  const items=NAV.filter(n=>allowed.includes(n.id));
+  const sb=d({width:'210px',background:'var(--near)',borderRight:'1px solid rgba(255,255,255,.04)',display:'flex',flexDirection:'column',flexShrink:'0',overflowY:'auto',paddingTop:'8px'});
+  items.forEach((sec,si)=>{
+    const a=APP.section===sec.id;
+    const btn2=d({display:'flex',alignItems:'center',gap:'10px',padding:'10px 18px',cursor:'pointer',userSelect:'none',borderLeft:a?'2px solid var(--ti1)':'2px solid transparent',background:a?'rgba(255,255,255,.05)':'transparent',marginTop:si>0?'2px':'0',transition:'background .15s'},
+      sp({fontSize:'12px',opacity:a?'1':'.4'},icons[sec.id]||'\u25ef'),
+      sp({fontFamily:'var(--fd)',fontSize:'12px',fontWeight:'800',letterSpacing:'.1em',textTransform:'uppercase',color:a?'var(--ti1)':'var(--ti3)'},sec.label)
+    );
+    btn2.addEventListener('mouseenter',()=>{if(!a)btn2.style.background='rgba(255,255,255,.03)';});
+    btn2.addEventListener('mouseleave',()=>{if(!a)btn2.style.background='transparent';});
+    btn2.addEventListener('click',()=>nav(sec.id,sec.pages[0].id,null));
+    sb.appendChild(btn2);
+    if(a&&sec.pages.length>1){
+      sec.pages.forEach(pg=>{
+        const pa=APP.page===pg.id&&!APP.sub;const hc=pg.sub&&pg.sub.length>0;
+        const pb=d({display:'flex',alignItems:'center',gap:'6px',padding:'7px 18px 7px 38px',cursor:'pointer',userSelect:'none',background:pa?'rgba(255,255,255,.04)':'transparent',transition:'background .15s'},
+          sp({fontSize:'9px',color:'var(--ti3)'},'\u2192'),
+          sp({fontFamily:'var(--fd)',fontSize:'11px',fontWeight:pa?'700':'600',letterSpacing:'.08em',textTransform:'uppercase',color:pa?'var(--ti1)':'var(--ti3)'},pg.label),
+          pg.badge?sp({marginLeft:'4px',padding:'1px 5px',fontSize:'7px',fontWeight:'700',background:'rgba(255,255,255,.06)',color:'var(--ti3)'},pg.badge):null
         );
-        pageBtn.addEventListener('mouseenter', () => { pageBtn.style.background = 'rgba(255,255,255,0.03)'; });
-        pageBtn.addEventListener('mouseleave', () => { pageBtn.style.background = isPageActive ? 'rgba(255,255,255,0.04)' : 'transparent'; });
-        pageBtn.addEventListener('click', e => {
-          e.stopPropagation();
-          if (hasChildren) navigate(section.id, page.id, page.sub[0].id);
-          else navigate(section.id, page.id, null);
-        });
-        sidebar.appendChild(pageBtn);
-
-        // Third-level (sub-pages) if parent page is active
-        if (hasChildren && state.page === page.id) {
-          page.sub.forEach(subpage => {
-            const isSubActive = state.sub === subpage.id;
-            const subBtn = div({
-              display:'flex', alignItems:'center', gap:'6px', padding:'6px 18px 6px 52px',
-              cursor:'pointer', userSelect:'none', background: isSubActive ? 'rgba(255,255,255,0.04)' : 'transparent',
-              transition:'background 0.15s'
-            },
-              span({ fontSize:'8px', color:'var(--ti3)', opacity:'0.5' }, '→'),
-              span({ fontFamily:'var(--fd)', fontSize:'10px', fontWeight: isSubActive ? '700' : '500', letterSpacing:'0.08em', textTransform:'uppercase', color: isSubActive ? 'var(--ti1)' : 'var(--ti3)', transition:'color 0.15s' }, subpage.label)
+        pb.addEventListener('mouseenter',()=>{pb.style.background='rgba(255,255,255,.03)';});
+        pb.addEventListener('mouseleave',()=>{pb.style.background=pa?'rgba(255,255,255,.04)':'transparent';});
+        pb.addEventListener('click',e=>{e.stopPropagation();if(hc)nav(sec.id,pg.id,pg.sub[0].id);else nav(sec.id,pg.id,null);});
+        sb.appendChild(pb);
+        if(hc&&APP.page===pg.id){
+          pg.sub.forEach(s2=>{
+            const sa=APP.sub===s2.id;
+            const sb2=d({display:'flex',alignItems:'center',gap:'6px',padding:'6px 18px 6px 52px',cursor:'pointer',userSelect:'none',background:sa?'rgba(255,255,255,.04)':'transparent'},
+              sp({fontSize:'8px',color:'var(--ti3)',opacity:'.5'},'\u2192'),
+              sp({fontFamily:'var(--fd)',fontSize:'10px',fontWeight:sa?'700':'500',letterSpacing:'.08em',textTransform:'uppercase',color:sa?'var(--ti1)':'var(--ti3)'},s2.label)
             );
-            subBtn.addEventListener('mouseenter', () => { subBtn.style.background = 'rgba(255,255,255,0.03)'; });
-            subBtn.addEventListener('mouseleave', () => { subBtn.style.background = isSubActive ? 'rgba(255,255,255,0.04)' : 'transparent'; });
-            subBtn.addEventListener('click', e => { e.stopPropagation(); navigate(section.id, page.id, subpage.id); });
-            sidebar.appendChild(subBtn);
+            sb2.addEventListener('click',e=>{e.stopPropagation();nav(sec.id,pg.id,s2.id);});
+            sb.appendChild(sb2);
           });
         }
       });
     }
-
-    // Divider after each section
-    sidebar.appendChild(div({ height:'1px', background:'rgba(255,255,255,0.04)', margin:'6px 0' }));
+    sb.appendChild(d({height:'1px',background:'rgba(255,255,255,.04)',margin:'6px 0'}));
   });
-
-  return sidebar;
+  sb.appendChild(d({flex:'1'}));
+  const sout=d({padding:'12px 18px',display:'flex',alignItems:'center',gap:'10px',cursor:'pointer',borderTop:'1px solid rgba(255,255,255,.04)'},
+    sp({fontSize:'11px',color:'var(--ti3)'},'\u238b'),
+    sp({fontFamily:'var(--fd)',fontSize:'11px',fontWeight:'700',letterSpacing:'.1em',textTransform:'uppercase',color:'var(--ti3)'},'Sign Out')
+  );
+  sout.addEventListener('click',()=>{APP.user=null;APP.gmail={loading:false,threads:[],selected:null,filter:'all',token:null};APP.cal.connected=false;APP.cal.events=[];render();});
+  sb.appendChild(sout);
+  return sb;
 }
 
-function getSectionIcon(id) {
-  return { dashboard:'▣', email:'✉', quality:'◈', fleet:'⬡', employee:'◎', finance:'◇' }[id] || '○';
-}
+/* DASHBOARD */
+function renderDashboard(){
+  const total=ROUTES.reduce((s,r)=>s+r.dt,0);
+  const done=ROUTES.reduce((s,r)=>s+r.dc,0);
+  const pct=Math.round(done/total*100);
+  const portalUrl='https://logistics.amazon.de/operations/execution/dv/routes?navMenuVariant=external&provider=ALL_DRIVERS&selectedDay=2026-04-01&serviceAreaId=79b18918-ed92-47f1-af33-59c03edab660';
+  const w=d({flex:'1',display:'flex',flexDirection:'column'});w.className='fade';
+  w.appendChild(d({padding:'22px 28px 0',flexShrink:'0'},
+    d({fontSize:'9px',letterSpacing:'.2em',textTransform:'uppercase',color:'var(--t3)',marginBottom:'5px',fontFamily:'var(--fd)'},'Welcome, '+((APP.user&&APP.user.name&&APP.user.name.split(' ')[0])||'there')+' \xb7 1 Apr 2026'),
+    d({fontFamily:'var(--fd)',fontSize:'32px',fontWeight:'900',color:'var(--t1)',lineHeight:'1'},'Operations ',sp({fontWeight:'300',color:'var(--t3)'},'Overview'))
+  ));
+  const body=d({padding:'16px 28px 28px',flex:'1',overflowY:'auto',display:'flex',flexDirection:'column',gap:'14px'});
 
-/* ── KPI strip ── */
-function makeKpiStrip(tiles) {
-  if (!tiles || !tiles.length) return div({});
-  const strip = div({ display:'grid', gridTemplateColumns:`repeat(${tiles.length}, 1fr)`, gap:'0', border:'1px solid rgba(0,0,0,0.06)', marginBottom:'16px' });
-  tiles.forEach((t, i) => {
-    const tile = div({
-      background: t.hero ? 'var(--ti1)' : 'var(--black)',
-      padding:'20px 20px 16px',
-      borderRight: i < tiles.length-1 ? (t.hero ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(255,255,255,0.04)') : 'none',
-      position:'relative', overflow:'hidden'
-    },
-      div({ fontSize:'8px', letterSpacing:'0.18em', textTransform:'uppercase', color: t.hero ? 'rgba(0,0,0,0.35)' : 'var(--ti3)', marginBottom:'10px', fontFamily:'var(--fd)' }, t.label),
-      div({ fontFamily:'var(--fd)', fontSize:'40px', fontWeight:'900', color: t.hero ? 'var(--black)' : 'var(--ti1)', lineHeight:'1' },
-        t.value,
-        t.unit ? span({ fontSize:'15px', fontWeight:'300', color: t.hero ? 'rgba(0,0,0,0.3)' : 'var(--ti3)', marginLeft:'3px' }, t.unit) : null
-      ),
-      div({ fontSize:'10px', color: t.hero ? 'rgba(0,0,0,0.35)' : 'var(--ti3)', marginTop:'7px' }, t.delta || ' ')
-    );
-    strip.appendChild(tile);
+  /* Route Summary */
+  const rs=document.createElement('div');rs.className='fade1';
+  const rp=d({background:'#fff',border:'1px solid var(--bd)',overflow:'hidden'});
+  rp.appendChild(panelHead('DSY2 \u2014 Route Summary',''));
+  const tg=d({display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1fr'});
+  [
+    [String(ROUTES.length),'Routes Today','Active routes \xb7 DSY2','dark'],
+    [total.toLocaleString(),'Total Parcels','Across all 41 routes','dark'],
+    [pct+'%','Delivered',done.toLocaleString()+' of '+total.toLocaleString(),'hero'],
+    ['\u2197 Open','Amazon Portal','logistics.amazon.de','link']
+  ].forEach(([val,lbl,sub,typ],i)=>{
+    const tile=d({background:typ==='hero'?'var(--ti1)':'var(--black)',padding:'20px 22px 16px',borderRight:i<3?'1px solid rgba('+(typ==='hero'?'0,0,0':'255,255,255')+',.04)':'none',cursor:typ==='link'?'pointer':'default',display:'flex',flexDirection:'column',justifyContent:'space-between'});
+    tile.appendChild(d({fontSize:'8px',letterSpacing:'.18em',textTransform:'uppercase',color:typ==='hero'?'rgba(0,0,0,.35)':'var(--ti3)',marginBottom:'8px',fontFamily:'var(--fd)'},lbl));
+    tile.appendChild(d({fontFamily:'var(--fd)',fontSize:typ==='link'?'20px':'44px',fontWeight:'900',color:typ==='hero'?'var(--black)':'var(--ti1)',lineHeight:'1'},val));
+    tile.appendChild(d({fontSize:'10px',color:typ==='hero'?'rgba(0,0,0,.35)':'var(--ti3)',marginTop:'6px'},sub));
+    if(typ==='link')tile.addEventListener('click',()=>window.open(portalUrl,'_blank'));
+    tg.appendChild(tile);
   });
-  return strip;
+  rp.appendChild(tg);rs.appendChild(rp);body.appendChild(rs);
+
+  /* Schedule */
+  const ss=document.createElement('div');ss.className='fade1';
+  const schp=d({background:'#fff',border:'1px solid var(--bd)',overflow:'hidden'});
+  schp.appendChild(panelHead("Today\u2019s Schedule",'Open Calendar \u2192',()=>nav('dashboard','calendar',null)));
+  SCHEDULE.forEach((item,i)=>{
+    const isDark=item.type==='dark',isAlert=item.type==='alert';
+    const row=d({display:'flex',borderBottom:i<SCHEDULE.length-1?'1px solid var(--bd)':'none',alignItems:'stretch'});
+    row.appendChild(d({padding:'12px 16px',width:'70px',flexShrink:'0',borderRight:'1px solid var(--bd)',display:'flex',alignItems:'center',justifyContent:'center'},
+      sp({fontFamily:'var(--fd)',fontSize:'13px',fontWeight:'700',color:'var(--t3)',letterSpacing:'.04em'},item.time)
+    ));
+    row.appendChild(d({padding:'12px 16px',flex:'1',background:isDark?'var(--black)':isAlert?'var(--cream2)':'transparent',display:'flex',alignItems:'center',justifyContent:'space-between'},
+      d({},d({fontSize:'12px',fontWeight:'600',color:isDark?'var(--ti1)':'var(--t1)',marginBottom:'2px'},item.title),d({fontSize:'10px',color:isDark?'var(--ti3)':'var(--t3)'},item.detail)),
+      isAlert?sp({padding:'2px 7px',fontSize:'8px',letterSpacing:'.1em',textTransform:'uppercase',fontWeight:'700',background:'var(--t1)',color:'var(--ti1)',marginLeft:'12px',flexShrink:'0'},'Action'):null
+    ));
+    schp.appendChild(row);
+  });
+  ss.appendChild(schp);body.appendChild(ss);
+
+  /* Fleet */
+  const f=FLEET;
+  const fs=document.createElement('div');fs.className='fade2';
+  const fp=d({background:'var(--near)',border:'1px solid rgba(255,255,255,.05)',overflow:'hidden'});
+  fp.appendChild(panelHead('Fleet Status \u2014 '+f.station,'\u2197 Fleet Portal',()=>window.open(f.portalUrl,'_blank'),true));
+  const fg=d({display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1fr 1fr 1fr'});
+  [
+    {lbl:'Total Active',val:String(f.totalActive),sub:'PLZ01561'},
+    {lbl:'Operational',val:String(f.operational),sub:Math.round(f.operational/f.totalActive*100)+'% of fleet',bar:Math.round(f.operational/f.totalActive*100)},
+    {lbl:'Grounded',val:String(f.grounded),sub:f.groundedReasons.issueReported+' issues \xb7 '+f.groundedReasons.inspectionDefect+' defect',red:true},
+    {lbl:'Pre-trip DVIC',val:String(f.dvic.preTrip),sub:'completed'},
+    {lbl:'Post-trip DVIC',val:String(f.dvic.postTrip),sub:f.dvic.postTripRemaining+' remaining'},
+    {lbl:'New Defects',val:String(f.dvic.newDefects),sub:f.dvic.newDefects===0?'All clear':'Needs attention',green:f.dvic.newDefects===0}
+  ].forEach((item,i)=>{
+    const cell=d({padding:'16px 18px',borderRight:i<5?'1px solid rgba(255,255,255,.05)':'none'});
+    cell.appendChild(d({fontSize:'8px',letterSpacing:'.14em',textTransform:'uppercase',color:'var(--ti3)',marginBottom:'6px',fontFamily:'var(--fd)'},item.lbl));
+    cell.appendChild(sp({fontFamily:'var(--fd)',fontSize:'26px',fontWeight:'900',lineHeight:'1',color:item.red?'var(--red)':item.green?'var(--green)':'var(--ti1)'},item.val));
+    if(item.bar!=null){const bw=d({height:'2px',background:'var(--shade)',position:'relative',overflow:'hidden',margin:'6px 0 3px'});bw.appendChild(d({position:'absolute',top:'0',left:'0',bottom:'0',width:item.bar+'%',background:'var(--ti2)'}));cell.appendChild(bw);}
+    else cell.appendChild(d({height:'2px',margin:'6px 0 3px'}));
+    cell.appendChild(d({fontSize:'9px',color:'var(--ti3)'},item.sub));
+    fg.appendChild(cell);
+  });
+  fp.appendChild(fg);fs.appendChild(fp);body.appendChild(fs);
+
+  /* Email Summary */
+  const es=document.createElement('div');es.className='fade3';
+  const emails=APP.gmail.threads.length>0?APP.gmail.threads:getDemoEmails();
+  const unread=emails.filter(e=>e.unread).length;
+  const invoices=emails.filter(e=>e.tag==='Invoice').length;
+  const important=emails.filter(e=>e.tag==='Important').length;
+  const ep=d({background:'#fff',border:'1px solid var(--bd)',overflow:'hidden'});
+  ep.appendChild(panelHead('Email Hub \u2014 '+(APP.user&&APP.user.email||'Gmail'),'Open Email Hub \u2192',()=>nav('email','overview',null)));
+  const sg=d({display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1fr',borderBottom:'1px solid var(--bd)'});
+  [[String(emails.length),'Total',APP.user&&APP.user.email||'Gmail'],[String(unread),'Unread','Need attention'],[String(invoices),'Invoices','Auto-saved Drive'],[String(important),'Important',important>0?'Action required':'All clear']].forEach(([v,l,s],i)=>{
+    const cell=d({padding:'14px 18px',borderRight:i<3?'1px solid var(--bd)':'none',background:i===1&&unread>0?'var(--cream)':'transparent'});
+    cell.appendChild(d({fontSize:'8px',letterSpacing:'.16em',textTransform:'uppercase',color:'var(--t3)',marginBottom:'6px',fontFamily:'var(--fd)'},l));
+    cell.appendChild(sp({fontFamily:'var(--fd)',fontSize:'28px',fontWeight:'900',color:'var(--t1)'},v));
+    cell.appendChild(d({fontSize:'10px',color:'var(--t3)',marginTop:'3px'},s));
+    sg.appendChild(cell);
+  });
+  ep.appendChild(sg);
+  emails.slice(0,4).forEach((em,i)=>{
+    const row=d({padding:'11px 18px',borderBottom:i<3?'1px solid var(--bd)':'none',display:'flex',alignItems:'center',gap:'10px',cursor:'pointer',background:em.unread?'var(--cream)':'#fff',transition:'background .1s'});
+    row.addEventListener('mouseenter',()=>{row.style.background='var(--cream2)';});
+    row.addEventListener('mouseleave',()=>{row.style.background=em.unread?'var(--cream)':'#fff';});
+    row.addEventListener('click',()=>nav('email','overview',null));
+    row.appendChild(d({width:'6px',height:'6px',borderRadius:'50%',background:em.unread?'var(--t1)':'transparent',flexShrink:'0',marginTop:'3px'}));
+    row.appendChild(d({flex:'1',minWidth:'0'},
+      d({display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:'2px'},
+        sp({fontSize:'12px',fontWeight:em.unread?'600':'400',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:'280px'},em.from),
+        sp({fontSize:'10px',color:'var(--t3)',flexShrink:'0',marginLeft:'8px'},em.date||em.time||'')
+      ),
+      sp({fontSize:'11px',color:'var(--t1)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',display:'block'},em.subject)
+    ));
+    if(em.tag)row.appendChild(sp({padding:'2px 6px',fontSize:'8px',letterSpacing:'.1em',textTransform:'uppercase',fontWeight:'700',background:em.tag==='Important'?'var(--t1)':em.tag==='Invoice'?'var(--cream3)':'var(--cream2)',color:em.tag==='Important'?'var(--ti1)':'var(--t2)',flexShrink:'0',marginLeft:'8px'},em.tag));
+    ep.appendChild(row);
+  });
+  if(APP.gmail.loading)ep.appendChild(loaderEl('Loading Gmail...'));
+  es.appendChild(ep);body.appendChild(es);
+  w.appendChild(body);return w;
 }
 
-/* ── Page header ── */
-function makePageHead(eyebrow, title, dimTitle, sub, actions) {
-  return div({ padding:'28px 32px 0', display:'flex', alignItems:'flex-start', justifyContent:'space-between', flexShrink:'0' },
-    div({ },
-      div({ fontSize:'9px', letterSpacing:'0.2em', textTransform:'uppercase', color:'var(--t3)', marginBottom:'6px', fontFamily:'var(--fd)' }, eyebrow),
-      div({ fontFamily:'var(--fd)', fontSize:'38px', fontWeight:'900', color:'var(--t1)', lineHeight:'1' },
-        title,
-        dimTitle ? span({ fontWeight:'300', color:'var(--t3)', marginLeft:'8px' }, dimTitle) : null
-      ),
-      sub ? div({ fontSize:'12px', color:'var(--t3)', marginTop:'5px' }, sub) : null
+/* CALENDAR */
+function renderCalendar(){
+  const w=d({flex:'1',display:'flex',flexDirection:'column',overflow:'hidden'});w.className='fade';
+  w.appendChild(d({padding:'22px 28px 0',display:'flex',alignItems:'flex-start',justifyContent:'space-between',flexShrink:'0'},
+    d({},
+      d({fontSize:'9px',letterSpacing:'.2em',textTransform:'uppercase',color:'var(--t3)',marginBottom:'5px',fontFamily:'var(--fd)'},'Schedule'),
+      d({fontFamily:'var(--fd)',fontSize:'32px',fontWeight:'900',color:'var(--t1)',lineHeight:'1'},"Today\u2019s ",sp({fontWeight:'300',color:'var(--t3)'},'Calendar'))
     ),
-    actions ? div({ display:'flex', gap:'8px', marginTop:'6px' }, ...actions) : null
-  );
+    d({display:'flex',gap:'8px',marginTop:'5px'},
+      APP.cal.connected
+        ?mkbtn('\u2713 Outlook Connected',false,null,{color:'var(--green)',borderColor:'var(--green)',cursor:'default',padding:'8px 14px'})
+        :mkbtn('Connect Outlook',true,async()=>{await connectOutlook();})
+    )
+  ));
+  if(APP.cal.loading){const lw=d({flex:'1',display:'flex',alignItems:'center',justifyContent:'center'});lw.appendChild(loaderEl('Loading Outlook calendar...'));w.appendChild(lw);return w;}
+  if(APP.cal.events.length===0)APP.cal.events=getDemoCalEvents();
+
+  const inner=d({padding:'14px 28px 0',flex:'1',display:'flex',flexDirection:'column',overflow:'hidden'});
+  /* Toolbar */
+  const tb=d({background:'#fff',border:'1px solid var(--bd)',display:'flex',alignItems:'center',gap:'8px',padding:'9px 14px',flexShrink:'0'});
+  const prev=d({width:'28px',height:'28px',border:'1px solid var(--bd)',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',fontSize:'14px',color:'var(--t2)',userSelect:'none'},'\u2039');
+  const next=d({width:'28px',height:'28px',border:'1px solid var(--bd)',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',fontSize:'14px',color:'var(--t2)',userSelect:'none'},'\u203a');
+  [prev,next].forEach(b=>{b.addEventListener('mouseenter',()=>{b.style.background='var(--cream2)';});b.addEventListener('mouseleave',()=>{b.style.background='transparent';});});
+  prev.addEventListener('click',()=>{APP.cal.view==='week'?APP.cal.date.setDate(APP.cal.date.getDate()-7):APP.cal.date.setMonth(APP.cal.date.getMonth()-1);render();});
+  next.addEventListener('click',()=>{APP.cal.view==='week'?APP.cal.date.setDate(APP.cal.date.getDate()+7):APP.cal.date.setMonth(APP.cal.date.getMonth()+1);render();});
+  const mlabel=d({fontFamily:'var(--fd)',fontSize:'15px',fontWeight:'800',letterSpacing:'.06em',color:'var(--t1)',minWidth:'160px'});
+  (function updateLabel(){
+    if(APP.cal.view==='week'){
+      const m=new Date(APP.cal.date);m.setDate(APP.cal.date.getDate()-APP.cal.date.getDay()+1);
+      const sn=new Date(m);sn.setDate(m.getDate()+6);
+      mlabel.textContent=m.toLocaleDateString('en-GB',{day:'numeric',month:'short'})+' \u2013 '+sn.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+    }else{mlabel.textContent=APP.cal.date.toLocaleDateString('en-GB',{month:'long',year:'numeric'});}
+  })();
+  const todaybtn=mkbtn('Today',false,()=>{APP.cal.date=new Date();render();},{padding:'5px 12px',fontSize:'9px'});
+  const vtabs=d({display:'flex',gap:'4px',marginLeft:'auto'});
+  ['week','month'].forEach(v=>{
+    const tab=d({padding:'5px 14px',fontFamily:'var(--fd)',fontSize:'10px',fontWeight:'700',letterSpacing:'.1em',textTransform:'uppercase',cursor:'pointer',border:'1px solid var(--bd)',background:APP.cal.view===v?'var(--black)':'transparent',color:APP.cal.view===v?'var(--ti1)':'var(--t2)',transition:'all .12s'},v[0].toUpperCase()+v.slice(1));
+    tab.addEventListener('click',()=>{APP.cal.view=v;render();});
+    vtabs.appendChild(tab);
+  });
+  tb.appendChild(prev);tb.appendChild(next);tb.appendChild(todaybtn);tb.appendChild(mlabel);tb.appendChild(vtabs);
+  tb.appendChild(mkbtn('+ New Event',true,()=>{APP.modal={type:'new-event',data:{}};render();}));
+  inner.appendChild(tb);
+  const calBody=d({flex:'1',background:'#fff',border:'1px solid var(--bd)',borderTop:'none',overflow:'hidden',display:'flex',flexDirection:'column'});
+  APP.cal.view==='week'?buildWeekView(calBody):buildMonthView(calBody);
+  inner.appendChild(calBody);w.appendChild(inner);return w;
 }
 
-/* ── Button ── */
-function makeBtn(label, solid, onClick) {
-  const btn = div({
-    display:'inline-flex', alignItems:'center', padding:'9px 18px',
-    background: solid ? 'var(--black)' : 'transparent',
-    color: solid ? 'var(--ti1)' : 'var(--t1)',
-    border: solid ? 'none' : '1px solid var(--t1)',
-    fontFamily:'var(--fd)', fontSize:'11px', fontWeight:'700',
-    letterSpacing:'0.1em', textTransform:'uppercase', cursor:'pointer',
-    userSelect:'none', transition:'opacity 0.15s'
-  }, label);
-  btn.addEventListener('click', onClick || (()=>{}));
-  btn.addEventListener('mouseenter', () => { btn.style.opacity = '0.8'; });
-  btn.addEventListener('mouseleave', () => { btn.style.opacity = '1'; });
-  return btn;
-}
-
-/* ── Panel wrapper ── */
-function makePanel(children, dark) {
-  const p = div(dark ? S.panelD : S.panel, ...children);
-  return p;
-}
-
-function makePanelHead(title, actionLabel, onAction, dark) {
-  return div({
-    padding:'13px 18px', borderBottom: dark ? '1px solid rgba(255,255,255,0.06)' : '1px solid var(--bd)',
-    display:'flex', alignItems:'center', justifyContent:'space-between'
-  },
-    div({ fontFamily:'var(--fd)', fontSize:'11px', fontWeight:'800', letterSpacing:'0.12em', textTransform:'uppercase', color: dark ? 'var(--ti1)' : 'var(--t1)' }, title),
-    actionLabel ? div({ fontSize:'9px', letterSpacing:'0.1em', textTransform:'uppercase', color: dark ? 'var(--ti3)' : 'var(--t2)', cursor:'pointer', fontWeight:'600' }, actionLabel) : null
-  );
-}
-
-/* ═══════════════════════════════════════
-   PAGE RENDERERS
-═══════════════════════════════════════ */
-
-function renderDashboardOverview() {
-  const body = div({ flex:'1', overflowY:'auto' }, ...['fade']);
-  body.className = 'fade';
-
-  const head = makePageHead('Today', 'Operations', 'Overview', 'Saturday 28 Mar 2026 · Leipzig, DE', [
-    makeBtn('Export', false),
-    makeBtn('+ New Task', true)
-  ]);
-
-  const kpi = makeKpiStrip(KPI.dashboard);
-
-  // Two column grid
-  const grid = div({ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'14px' });
-
-  // — Emails panel —
-  let selectedEmail = null;
-
-  const emailPanel = makePanel([makePanelHead('Recent Emails', 'Open Hub →')]);
-  EMAILS.slice(0,4).forEach(em => {
-    const row = div({
-      padding:'11px 18px', borderBottom:'1px solid var(--bd)', cursor:'pointer',
-      background: em.unread ? 'var(--cream)' : '#fff', transition:'background 0.15s'
-    },
-      div({ display:'flex', alignItems:'center', gap:'6px', marginBottom:'2px' },
-        em.unread ? div({ width:'6px', height:'6px', borderRadius:'50%', background:'var(--t1)', flexShrink:'0' }) : div({ width:'6px', height:'6px', flexShrink:'0' }),
-        span({ fontSize:'12px', fontWeight: em.unread ? '600' : '400', flex:'1' }, em.from),
-        span({ fontSize:'10px', color:'var(--t3)' }, em.time)
-      ),
-      div({ fontSize:'11px', color:'var(--t1)', paddingLeft:'12px', overflow:'hidden', whiteSpace:'nowrap', textOverflow:'ellipsis' }, em.subj),
-      em.tag ? div({ paddingLeft:'12px', marginTop:'4px' }, span({ padding:'2px 6px', fontSize:'8px', letterSpacing:'0.1em', textTransform:'uppercase', fontWeight:'700', background: em.tag==='Urgent'?'var(--t1)':'var(--cream3)', color: em.tag==='Urgent'?'var(--ti1)':'var(--t1)' }, em.tag)) : null
-    );
-    row.addEventListener('mouseenter', () => { row.style.background = 'var(--cream2)'; });
-    row.addEventListener('mouseleave', () => { row.style.background = em.unread ? 'var(--cream)' : '#fff'; });
-    emailPanel.appendChild(row);
+function buildWeekView(c){
+  const today=new Date();
+  const days=[];
+  const mon=new Date(APP.cal.date);mon.setDate(APP.cal.date.getDate()-APP.cal.date.getDay()+1);
+  for(let i=0;i<7;i++){const d2=new Date(mon);d2.setDate(mon.getDate()+i);days.push(d2);}
+  /* Header */
+  const hdr=d({display:'flex',flexShrink:'0',borderBottom:'1px solid var(--bd)',background:'#fff'});
+  hdr.appendChild(d({width:'52px',flexShrink:'0',borderRight:'1px solid var(--bd)'}));
+  days.forEach((day,di)=>{
+    const isT=day.toDateString()===today.toDateString();
+    const col=d({flex:'1',padding:'8px 8px 7px',borderRight:di<6?'1px solid var(--bd)':'none',textAlign:'center'});
+    col.appendChild(d({fontSize:'9px',fontWeight:'700',letterSpacing:'.12em',textTransform:'uppercase',color:'var(--t3)',marginBottom:'3px'},day.toLocaleDateString('en-GB',{weekday:'short'})));
+    const nm=d({fontFamily:'var(--fd)',fontSize:'17px',fontWeight:'900',lineHeight:'1',width:'30px',height:'30px',display:'inline-flex',alignItems:'center',justifyContent:'center',borderRadius:'50%',background:isT?'var(--black)':'transparent',color:isT?'var(--ti1)':'var(--t1)'},String(day.getDate()));
+    col.appendChild(nm);hdr.appendChild(col);
   });
-
-  // — Fleet panel —
-  const fleetPanel = makePanel([makePanelHead('Fleet Status', 'View All →', ()=>navigate('fleet','overview'), true)], true);
-  FLEET.slice(0,4).forEach(v => {
-    const row = div({ padding:'12px 18px', borderBottom:'1px solid rgba(255,255,255,0.05)', display:'flex', alignItems:'center', gap:'12px' },
-      div({ flex:'1' },
-        div({ display:'flex', justifyContent:'space-between', marginBottom:'5px' },
-          span({ fontSize:'12px', fontWeight:'500', color:'var(--ti1)', fontFamily:'var(--fd)', letterSpacing:'0.04em' }, v.plate),
-          span({ fontSize:'10px', color:'var(--ti3)' }, v.route)
-        ),
-        div({ height:'2px', background:'var(--shade)', position:'relative', overflow:'hidden' },
-          div({ position:'absolute', top:'0', left:'0', bottom:'0', width: v.pct+'%', background: v.status==='maint'?'#555':'var(--ti2)' })
-        ),
-        div({ display:'flex', justifyContent:'space-between', marginTop:'4px' },
-          span({ fontSize:'9px', color:'var(--ti3)' }, v.pct+'%'),
-          span({ fontSize:'9px', color:'var(--ti3)' }, 'ETA '+v.eta)
-        )
-      ),
-      span({ padding:'2px 6px', fontSize:'8px', letterSpacing:'0.08em', textTransform:'uppercase', fontWeight:'700', background: v.status==='maint'?'transparent':v.status==='depot'?'transparent':'rgba(255,255,255,0.06)', color: v.status==='maint'?'#555':'var(--ti2)', border: v.status==='maint'?'1px solid #333':'none' }, v.status==='maint'?'Maint':v.status==='depot'?'Depot':'Route')
-    );
-    fleetPanel.appendChild(row);
-  });
-
-  // — Schedule panel —
-  const schedItems = [
-    { time:'06:00', label:'Morning routes depart', sub:'Weber · Richter · Braun', dark:true },
-    { time:'09:00', label:'Driver cover review', sub:'Richter sick — reassignment needed', dark:false, accent:true },
-    { time:'11:30', label:'HH-GL 4421 arrives Berlin', sub:'Jonas Weber · ETA confirmed', dark:false },
-    { time:'14:00', label:'Afternoon shift handover', sub:'Schmidt · Hoffmann depart', dark:false }
-  ];
-  const schedPanel = makePanel([makePanelHead('Today\'s Schedule', 'Calendar →')]);
-  schedItems.forEach((s,i) => {
-    const row = div({ display:'flex', gap:'12px', padding:'10px 18px', borderBottom: i<schedItems.length-1?'1px solid var(--bd)':'none', alignItems:'flex-start' },
-      span({ fontSize:'10px', color:'var(--t3)', width:'36px', flexShrink:'0', paddingTop:'2px', fontFamily:'var(--fd)', fontWeight:'600' }, s.time),
-      div({ flex:'1', padding:'8px 10px', background: s.dark?'var(--black)':s.accent?'var(--cream2)':'transparent', border: (!s.dark&&!s.accent)?'1px solid var(--bd)':'none' },
-        div({ fontSize:'11px', fontWeight:'600', color: s.dark?'var(--ti1)':'var(--t1)' }, s.label),
-        div({ fontSize:'9px', color: s.dark?'var(--ti3)':'var(--t3)', marginTop:'2px' }, s.sub)
-      )
-    );
-    schedPanel.appendChild(row);
-  });
-
-  // — People panel —
-  const peoplePanel = makePanel([makePanelHead('People Today', 'All Staff →')]);
-  const peopleGrid = div({ display:'grid', gridTemplateColumns:'1fr 1fr' });
-  STAFF.slice(0,6).forEach((p,i) => {
-    const isSick = p.status==='Sick';
-    const isLeave = p.status==='On Leave';
-    const cell = div({ padding:'10px 18px', display:'flex', alignItems:'center', gap:'8px', borderRight: i%2===0?'1px solid var(--bd)':'none', borderBottom: i<4?'1px solid var(--bd)':'none', opacity: isSick||isLeave?'0.5':'1' },
-      div({ width:'30px', height:'30px', borderRadius:'50%', background:'var(--cream2)', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'var(--fd)', fontSize:'9px', fontWeight:'800', color:'var(--t1)', flexShrink:'0' }, p.init),
-      div({ flex:'1', minWidth:'0' },
-        div({ fontSize:'11px', fontWeight:'600', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }, p.name),
-        div({ fontSize:'9px', color:'var(--t3)', marginTop:'1px' }, p.status)
-      )
-    );
-    peopleGrid.appendChild(cell);
-  });
-  peoplePanel.appendChild(peopleGrid);
-
-  grid.appendChild(div({ display:'flex', flexDirection:'column', gap:'14px' }, emailPanel, fleetPanel));
-  grid.appendChild(div({ display:'flex', flexDirection:'column', gap:'14px' }, schedPanel, peoplePanel));
-
-  const inner = div({ padding:'16px 32px 32px' }, kpi, grid);
-  inner.insertBefore(div({}), inner.firstChild); // spacer
-
-  const wrapper = div({ flex:'1', display:'flex', flexDirection:'column' });
-  wrapper.appendChild(head);
-  wrapper.appendChild(inner);
-  return wrapper;
-}
-
-function renderEmailPage(pageId) {
-  const tiles = KPI.email[pageId] || KPI.email.overview;
-  const label = pageId === 'overview' ? 'All Inboxes' : pageId.toUpperCase();
-  const wrapper = div({ flex:'1', display:'flex', flexDirection:'column', className:'fade' });
-  wrapper.className = 'fade';
-
-  wrapper.appendChild(makePageHead('Email', label, '', 'Gmail + Outlook unified inbox', [makeBtn('Compose', true)]));
-
-  const inner = div({ padding:'16px 32px 32px', flex:'1' });
-  inner.appendChild(makeKpiStrip(tiles));
-
-  // Filter bar
-  const filters = ['All','Unread','Invoices','Urgent'];
-  let activeFilter = 'All';
-  const filterBar = div({ display:'flex', gap:'6px', marginBottom:'14px' });
-  filters.forEach(f => {
-    const chip = div({ padding:'6px 14px', background: f===activeFilter?'var(--black)':'var(--cream2)', color: f===activeFilter?'var(--ti1)':'var(--t2)', fontFamily:'var(--fd)', fontSize:'10px', fontWeight:'700', letterSpacing:'0.1em', textTransform:'uppercase', cursor:'pointer', userSelect:'none' }, f);
-    chip.addEventListener('click', () => { activeFilter=f; /* re-render filter visual */ });
-    filterBar.appendChild(chip);
-  });
-
-  // Email list + detail split
-  const splitGrid = div({ display:'grid', gridTemplateColumns:'380px 1fr', gap:'0', background:'#fff', border:'1px solid var(--bd)' });
-
-  // List
-  const listCol = div({ borderRight:'1px solid var(--bd)', overflowY:'auto' });
-  filterBar.style.padding = '10px';
-  filterBar.style.background = 'var(--cream2)';
-  filterBar.style.borderBottom = '1px solid var(--bd)';
-  filterBar.style.flexWrap = 'wrap';
-  listCol.appendChild(filterBar);
-
-  let selectedId = EMAILS[0].id;
-
-  function buildList() {
-    Array.from(listCol.children).forEach(c => { if (!c.classList.contains('filter-bar')) listCol.removeChild(c); });
-    const filtered = EMAILS.filter(e => {
-      if (activeFilter==='Unread') return e.unread;
-      if (activeFilter==='Invoices') return e.tag==='Invoice';
-      if (activeFilter==='Urgent') return e.tag==='Urgent';
-      return true;
+  c.appendChild(hdr);
+  /* Scrollable */
+  const scroll=d({flex:'1',overflowY:'auto',display:'flex'});
+  /* Time col */
+  const tcol=d({width:'52px',flexShrink:'0',borderRight:'1px solid var(--bd)'});
+  for(let h=0;h<24;h++)tcol.appendChild(d({height:'48px',display:'flex',alignItems:'flex-start',justifyContent:'flex-end',padding:'2px 6px 0',fontSize:'9px',color:'var(--t4)',fontFamily:'var(--fd)',fontWeight:'600'},h===0?'':String(h).padStart(2,'0')+':00'));
+  scroll.appendChild(tcol);
+  /* Day cols */
+  const dcols=d({display:'flex',flex:'1'});
+  days.forEach((day,di)=>{
+    const isT=day.toDateString()===today.toDateString();
+    const col=d({flex:'1',borderRight:di<6?'1px solid var(--bd)':'none',position:'relative',minHeight:(48*24)+'px'});
+    for(let h=0;h<24;h++)col.appendChild(d({height:'48px',borderBottom:'1px solid var(--bd)'}));
+    APP.cal.events.filter(ev=>!ev.isAllDay&&ev.start.toDateString()===day.toDateString()).forEach(ev=>{
+      const sh=ev.start.getHours()+ev.start.getMinutes()/60;
+      const eh=ev.end.getHours()+ev.end.getMinutes()/60;
+      const dur=Math.max(eh-sh,.25);
+      const evEl=d({position:'absolute',left:'3px',right:'3px',top:(sh*48)+'px',height:(dur*48-2)+'px',background:ev.color,padding:'3px 6px',cursor:'pointer',overflow:'hidden',borderRadius:'1px',zIndex:'2'});
+      evEl.appendChild(d({fontWeight:'600',color:'#fff',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',fontSize:'10px'},ev.title));
+      if(dur>0.5)evEl.appendChild(d({fontSize:'9px',color:'rgba(255,255,255,.7)',marginTop:'1px'},String(ev.start.getHours()).padStart(2,'0')+':'+String(ev.start.getMinutes()).padStart(2,'0')));
+      evEl.addEventListener('click',()=>{APP.modal={type:'event',data:ev};render();});
+      evEl.addEventListener('mouseenter',()=>{evEl.style.opacity='.8';});
+      evEl.addEventListener('mouseleave',()=>{evEl.style.opacity='1';});
+      col.appendChild(evEl);
     });
-    filtered.forEach(em => {
-      const isSelected = em.id === selectedId;
-      const row = div({ padding:'12px 16px', borderBottom:'1px solid var(--bd)', cursor:'pointer', background: isSelected?'var(--cream2)':em.unread?'var(--cream)':'#fff', borderLeft: isSelected?'2px solid var(--t1)':'2px solid transparent', transition:'background 0.1s' },
-        div({ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'2px' },
-          div({ display:'flex', alignItems:'center', gap:'5px' },
-            em.unread ? div({ width:'6px', height:'6px', borderRadius:'50%', background:'var(--t1)', flexShrink:'0' }) : null,
-            span({ fontSize:'11px', fontWeight: em.unread?'600':'400' }, em.from)
-          ),
-          span({ fontSize:'9px', color:'var(--t3)' }, em.time)
-        ),
-        div({ fontSize:'10px', color:'var(--t1)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', marginBottom:'2px' }, em.subj),
-        div({ display:'flex', gap:'4px', marginTop:'3px' },
-          span({ padding:'1px 5px', fontSize:'7px', letterSpacing:'0.1em', textTransform:'uppercase', fontWeight:'700', background:'var(--cream3)', color:'var(--t1)' }, em.src),
-          em.tag ? span({ padding:'1px 5px', fontSize:'7px', letterSpacing:'0.1em', textTransform:'uppercase', fontWeight:'700', background: em.tag==='Urgent'?'var(--t1)':'var(--cream2)', color: em.tag==='Urgent'?'var(--ti1)':'var(--t1)' }, em.tag) : null
-        )
-      );
-      row.addEventListener('click', () => { selectedId=em.id; buildList(); buildDetail(); });
-      listCol.appendChild(row);
-    });
-  }
-
-  const detailCol = div({ flex:'1', display:'flex', flexDirection:'column' });
-
-  function buildDetail() {
-    detailCol.innerHTML = '';
-    const em = EMAILS.find(e=>e.id===selectedId);
-    if (!em) return;
-    const header = div({ padding:'18px 20px', borderBottom:'1px solid var(--bd)' },
-      div({ display:'flex', gap:'10px', alignItems:'flex-start' },
-        div({ width:'38px', height:'38px', borderRadius:'50%', background:'var(--cream2)', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'var(--fd)', fontSize:'12px', fontWeight:'800', color:'var(--t1)', flexShrink:'0' }, em.from.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()),
-        div({ flex:'1' },
-          div({ fontSize:'13px', fontWeight:'600' }, em.from),
-          div({ fontSize:'10px', color:'var(--t3)', marginTop:'1px' }, em.addr+' · '+em.src+' · Today '+em.time)
-        )
-      ),
-      div({ fontSize:'13px', fontWeight:'600', marginTop:'12px' }, em.subj),
-      div({ display:'flex', gap:'5px', marginTop:'7px' },
-        span({ padding:'2px 7px', fontSize:'8px', letterSpacing:'0.1em', textTransform:'uppercase', fontWeight:'700', background:'var(--cream3)', color:'var(--t1)' }, em.src),
-        em.tag ? span({ padding:'2px 7px', fontSize:'8px', letterSpacing:'0.1em', textTransform:'uppercase', fontWeight:'700', background: em.tag==='Urgent'?'var(--t1)':'var(--cream2)', color: em.tag==='Urgent'?'var(--ti1)':'var(--t1)' }, em.tag) : null,
-        em.tag==='Invoice' ? span({ padding:'2px 7px', fontSize:'8px', letterSpacing:'0.1em', textTransform:'uppercase', fontWeight:'700', background:'var(--cream2)', color:'var(--t2)' }, '✓ Auto-saved Drive') : null
-      )
-    );
-
-    const bodyDiv = div({ padding:'18px 20px', fontSize:'12px', lineHeight:'1.8', color:'var(--t2)', flex:'1', whiteSpace:'pre-wrap', borderBottom:'1px solid var(--bd)' }, em.body);
-
-    const replyArea = div({ padding:'14px 20px' },
-      div({ fontSize:'9px', letterSpacing:'0.14em', textTransform:'uppercase', fontWeight:'700', color:'var(--t3)', marginBottom:'8px', fontFamily:'var(--fd)' }, 'Reply'),
-      el('textarea', { placeholder:'Type your reply...', style:{ width:'100%', minHeight:'70px', padding:'10px 12px', border:'1px solid var(--bd)', background:'var(--cream)', fontSize:'12px', resize:'vertical', outline:'none', fontFamily:'var(--fb)' } }),
-      div({ display:'flex', justifyContent:'flex-end', gap:'8px', marginTop:'8px' },
-        makeBtn('Discard', false),
-        makeBtn('Send ↑', true)
-      )
-    );
-
-    detailCol.appendChild(header);
-    detailCol.appendChild(bodyDiv);
-    detailCol.appendChild(replyArea);
-  }
-
-  buildList();
-  buildDetail();
-
-  splitGrid.appendChild(listCol);
-  splitGrid.appendChild(detailCol);
-
-  inner.appendChild(splitGrid);
-  wrapper.appendChild(inner);
-  return wrapper;
-}
-
-function renderGenericPage(sectionId, pageId, subId) {
-  const sec = NAV.find(n=>n.id===sectionId);
-  const page = sec && sec.pages.find(p=>p.id===pageId);
-  const subpage = page && page.sub && page.sub.find(s=>s.id===subId);
-
-  const eyebrow = sec ? sec.label : sectionId;
-  const title = page ? page.label : pageId;
-  const subtitle = subpage ? subpage.label : null;
-
-  // Get KPI tiles
-  let tiles = null;
-  try {
-    const secKpi = KPI[sectionId];
-    if (secKpi) {
-      if (subId && secKpi[pageId] && secKpi[pageId][subId]) tiles = secKpi[pageId][subId];
-      else if (secKpi[pageId] && Array.isArray(secKpi[pageId])) tiles = secKpi[pageId];
-      else if (Array.isArray(secKpi)) tiles = secKpi;
+    if(isT){
+      const n=new Date();const nowH=n.getHours()+n.getMinutes()/60;
+      const nl=d({position:'absolute',left:'0',right:'0',height:'2px',background:'var(--red)',zIndex:'3',top:(nowH*48)+'px'});
+      nl.appendChild(d({position:'absolute',left:'-4px',top:'-4px',width:'10px',height:'10px',borderRadius:'50%',background:'var(--red)'}));
+      col.appendChild(nl);
     }
-  } catch(e) {}
-
-  const displayTitle = subtitle ? title+' / '+subtitle : title;
-  const wrapper = div({ flex:'1', display:'flex', flexDirection:'column' });
-  wrapper.className = 'fade';
-
-  wrapper.appendChild(makePageHead(eyebrow, displayTitle, '', 'Overview · Data · Reporting', [makeBtn('Export', false), makeBtn('Refresh', true)]));
-
-  const inner = div({ padding:'16px 32px 32px', flex:'1' });
-  if (tiles) inner.appendChild(makeKpiStrip(tiles));
-
-  // Content placeholder grid
-  const grid = div({ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'14px' });
-
-  // Left panel
-  const lPanel = makePanel([
-    makePanelHead(eyebrow+' — '+title+' Data', 'View All →'),
-    div({ padding:'20px 18px' },
-      ...Array.from({length:6}, (_,i) => div({ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 0', borderBottom: i<5?'1px solid var(--bd)':'none' },
-        div({ fontSize:'12px', color:'var(--t2)' }, 'Record '+(i+1)+' — '+eyebrow),
-        div({ fontSize:'11px', color:'var(--t3)' }, 'Detail →')
-      ))
-    )
-  ]);
-
-  // Right panel — activity
-  const rPanel = makePanel([
-    makePanelHead('Activity & Updates', ''),
-    div({ padding:'14px 18px' },
-      ...['Updated 2 min ago', 'Report generated', 'Data synced', 'Review complete'].map((item,i) => div({ display:'flex', gap:'10px', alignItems:'flex-start', padding:'9px 0', borderBottom: i<3?'1px solid var(--bd)':'none' },
-        div({ width:'6px', height:'6px', borderRadius:'50%', background:'var(--cream3)', flexShrink:'0', marginTop:'4px' }),
-        div({ fontSize:'11px', color:'var(--t2)' }, item)
-      ))
-    )
-  ]);
-
-  // Integration callout
-  const callout = div({ gridColumn:'1/-1', background:'var(--near)', border:'1px solid rgba(255,255,255,0.05)', padding:'20px 24px', display:'flex', alignItems:'center', gap:'16px' },
-    div({ flex:'1' },
-      div({ fontFamily:'var(--fd)', fontSize:'14px', fontWeight:'800', letterSpacing:'0.08em', color:'var(--ti1)', marginBottom:'4px' }, '🔗 Live Integration Pending'),
-      div({ fontSize:'12px', color:'var(--ti3)' }, 'This section will connect to '+eyebrow+' data via API. Configure your credentials to activate live data.')
-    ),
-    makeBtn('Configure →', true)
-  );
-
-  grid.appendChild(lPanel);
-  grid.appendChild(rPanel);
-  grid.appendChild(callout);
-
-  inner.appendChild(grid);
-  wrapper.appendChild(inner);
-  return wrapper;
-}
-
-function renderFleetOverview() {
-  const wrapper = div({ flex:'1', display:'flex', flexDirection:'column' });
-  wrapper.className = 'fade';
-  wrapper.appendChild(makePageHead('Fleet', 'Fleet', 'Overview', '6 vehicles · Live tracking', [makeBtn('Export', false), makeBtn('Fleet App →', true, ()=>navigate('fleet','fleetapp'))]));
-  const inner = div({ padding:'16px 32px 32px' });
-  inner.appendChild(makeKpiStrip(KPI.fleet.overview));
-  const grid = div({ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'10px' });
-  FLEET.forEach(v => {
-    const card = div({ background:'var(--near)', padding:'16px', border:'1px solid rgba(255,255,255,0.04)', opacity: v.status==='maint'?'0.65':'1' },
-      div({ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'6px' },
-        div({ fontFamily:'var(--fd)', fontSize:'16px', fontWeight:'900', color:'var(--ti1)', letterSpacing:'0.06em' }, v.plate),
-        span({ padding:'2px 6px', fontSize:'8px', letterSpacing:'0.1em', textTransform:'uppercase', fontWeight:'700', background: v.status==='maint'?'transparent':v.status==='depot'?'transparent':'rgba(255,255,255,0.06)', color: v.status==='maint'?'#555':'var(--ti2)', border: v.status==='maint'?'1px solid #333':v.status==='depot'?'1px solid rgba(255,255,255,0.08)':'none' }, v.status==='maint'?'Maint':v.status==='depot'?'Depot':'Route')
-      ),
-      div({ fontSize:'9px', color:'var(--ti3)', marginBottom:'3px' }, v.type+' · '+v.driver),
-      div({ fontSize:'10px', color:'var(--ti2)', marginBottom:'10px' }, v.route),
-      div({ height:'2px', background:'var(--shade)', position:'relative', overflow:'hidden', marginBottom:'5px' },
-        div({ position:'absolute', top:'0', left:'0', bottom:'0', width:v.pct+'%', background: v.status==='maint'?'#444':'var(--ti3)' })
-      ),
-      div({ display:'flex', justifyContent:'space-between' },
-        span({ fontSize:'9px', color:'var(--ti3)' }, v.pct+'% complete'),
-        span({ fontSize:'9px', color:'var(--ti3)' }, 'ETA '+v.eta)
-      )
-    );
-    grid.appendChild(card);
+    dcols.appendChild(col);
   });
-  inner.appendChild(grid);
-  wrapper.appendChild(inner);
-  return wrapper;
+  scroll.appendChild(dcols);c.appendChild(scroll);
+  setTimeout(()=>{scroll.scrollTop=7*48;},50);
 }
 
-function renderEmployeeOverview() {
-  const wrapper = div({ flex:'1', display:'flex', flexDirection:'column' });
-  wrapper.className = 'fade';
-  wrapper.appendChild(makePageHead('Employee', 'Team', 'Overview', '8 staff registered', [makeBtn('Add Employee', true)]));
-  const inner = div({ padding:'16px 32px 32px' });
-  inner.appendChild(makeKpiStrip(KPI.employee.overview));
-  const grid = div({ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr', gap:'10px' });
-  STAFF.forEach(p => {
-    const isSick = p.status==='Sick', isLeave=p.status==='On Leave';
-    const card = div({ background:'#fff', border:'1px solid var(--bd)', padding:'16px', opacity: isSick||isLeave?'0.6':'1' },
-      div({ width:'40px', height:'40px', borderRadius:'50%', background:'var(--cream2)', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'var(--fd)', fontSize:'13px', fontWeight:'800', color:'var(--t1)', marginBottom:'10px' }, p.init),
-      div({ fontSize:'12px', fontWeight:'600', marginBottom:'2px' }, p.name),
-      div({ fontSize:'10px', color:'var(--t3)', marginBottom:'8px' }, p.role),
-      div({ display:'flex', justifyContent:'space-between', alignItems:'center' },
-        span({ padding:'2px 7px', fontSize:'8px', letterSpacing:'0.1em', textTransform:'uppercase', fontWeight:'700', background: isSick?'var(--cream3)':isLeave?'var(--cream2)':'var(--t1)', color: isSick||isLeave?'var(--t2)':'var(--ti1)' }, p.status),
-        span({ fontSize:'9px', color:'var(--t4)' }, p.section)
-      )
-    );
-    grid.appendChild(card);
+function buildMonthView(c){
+  const yr=APP.cal.date.getFullYear(),mo=APP.cal.date.getMonth();
+  const today=new Date();
+  const hdr=d({display:'grid',gridTemplateColumns:'repeat(7,1fr)',flexShrink:'0'});
+  ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach(n=>hdr.appendChild(d({padding:'8px',fontFamily:'var(--fd)',fontSize:'9px',fontWeight:'700',letterSpacing:'.14em',textTransform:'uppercase',color:'var(--t3)',borderBottom:'1px solid var(--bd)',borderRight:'1px solid var(--bd)',textAlign:'center',background:'var(--cream2)'},n)));
+  c.appendChild(hdr);
+  const grid=d({display:'grid',gridTemplateColumns:'repeat(7,1fr)',flex:'1',overflowY:'auto'});
+  const first=new Date(yr,mo,1);
+  let off=first.getDay()-1;if(off<0)off=6;
+  const start=new Date(first);start.setDate(start.getDate()-off);
+  for(let i=0;i<42;i++){
+    const cd=new Date(start);cd.setDate(start.getDate()+i);
+    const isT=cd.toDateString()===today.toDateString(),isCur=cd.getMonth()===mo;
+    const cell=d({border:'1px solid var(--bd)',padding:'6px',minHeight:'85px',borderTop:'none',borderLeft:'none',background:isCur?'#fff':'var(--cream)'});
+    cell.appendChild(d({fontFamily:'var(--fd)',fontSize:'13px',fontWeight:'700',marginBottom:'4px',width:'22px',height:'22px',display:'flex',alignItems:'center',justifyContent:'center',borderRadius:'50%',background:isT?'var(--black)':'transparent',color:isT?'var(--ti1)':isCur?'var(--t1)':'var(--t3)'},String(cd.getDate())));
+    APP.cal.events.filter(ev=>ev.start.toDateString()===cd.toDateString()).slice(0,2).forEach(ev=>{
+      const e2=d({fontSize:'9px',fontWeight:'600',padding:'2px 5px',marginBottom:'2px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',cursor:'pointer',background:ev.color,color:'#fff',borderRadius:'1px'},ev.title);
+      e2.addEventListener('click',()=>{APP.modal={type:'event',data:ev};render();});
+      cell.appendChild(e2);
+    });
+    grid.appendChild(cell);
+  }
+  c.appendChild(grid);
+}
+
+/* EMAIL PAGE */
+function renderEmailPage(){
+  const w=d({flex:'1',display:'flex',flexDirection:'column'});w.className='fade';
+  w.appendChild(d({padding:'22px 28px 0',display:'flex',alignItems:'flex-start',justifyContent:'space-between',flexShrink:'0'},
+    d({},
+      d({fontSize:'9px',letterSpacing:'.2em',textTransform:'uppercase',color:'var(--t3)',marginBottom:'5px',fontFamily:'var(--fd)'},'Email Hub \xb7 '+((APP.user&&APP.user.email)||'')),
+      d({fontFamily:'var(--fd)',fontSize:'32px',fontWeight:'900',color:'var(--t1)',lineHeight:'1'},'Gmail ',sp({fontWeight:'300',color:'var(--t3)'},'Inbox'))
+    ),
+    d({display:'flex',gap:'8px',marginTop:'5px'},
+      mkbtn('Refresh',false,async()=>{if(APP.gmail.token){APP.gmail.loading=true;render();APP.gmail.threads=await loadGmail(APP.gmail.token);APP.gmail.loading=false;render();}}),
+      mkbtn('\u2197 Open Gmail',true,()=>window.open('https://mail.google.com','_blank'))
+    )
+  ));
+  const inner=d({padding:'14px 28px 28px',flex:'1',display:'flex',gap:'14px',overflow:'hidden'});
+  if(APP.gmail.loading){const lw=d({flex:'1',display:'flex',alignItems:'center',justifyContent:'center'});lw.appendChild(loaderEl('Loading Gmail...'));inner.appendChild(lw);w.appendChild(inner);return w;}
+  const emails=APP.gmail.threads.length>0?APP.gmail.threads:getDemoEmails();
+  const left=d({width:'360px',flexShrink:'0',display:'flex',flexDirection:'column',background:'#fff',border:'1px solid var(--bd)',overflow:'hidden'});
+  /* Filters */
+  const fb=d({padding:'8px 10px',background:'var(--cream2)',borderBottom:'1px solid var(--bd)',display:'flex',gap:'5px',flexWrap:'wrap'});
+  [['all','All'],['unread','Unread'],['invoices','Invoices'],['important','Important']].forEach(([f,l])=>{
+    const ac=APP.gmail.filter===f;
+    const chip=d({padding:'4px 10px',background:ac?'var(--black)':'transparent',color:ac?'var(--ti1)':'var(--t2)',fontFamily:'var(--fd)',fontSize:'9px',fontWeight:'700',letterSpacing:'.1em',textTransform:'uppercase',cursor:'pointer',userSelect:'none',border:'1px solid '+(ac?'var(--black)':'var(--bd)')},l);
+    chip.addEventListener('click',()=>{APP.gmail.filter=f;render();});fb.appendChild(chip);
   });
-  inner.appendChild(grid);
-  wrapper.appendChild(inner);
-  return wrapper;
-}
-
-/* ─── User Panel Dropdown ─── */
-function makeUserDropdown() {
-  const overlay = div({ position:'fixed', inset:'0', zIndex:'100' });
-  overlay.addEventListener('click', () => { state.userOpen=false; render(); });
-
-  const panel = div({ position:'fixed', top:'52px', right:'0', width:'260px', background:'var(--near)', border:'1px solid rgba(255,255,255,0.06)', zIndex:'101', boxShadow:'0 8px 32px rgba(0,0,0,0.5)' },
-    div({ padding:'16px 18px', borderBottom:'1px solid rgba(255,255,255,0.06)' },
-      div({ display:'flex', gap:'10px', alignItems:'center' },
-        div({ width:'38px', height:'38px', borderRadius:'50%', background:'var(--shade)', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'var(--fd)', fontSize:'13px', fontWeight:'800', color:'var(--ti2)' }, 'AU'),
-        div({},
-          div({ fontSize:'13px', fontWeight:'600', color:'var(--ti1)' }, 'Admin User'),
-          div({ fontSize:'10px', color:'var(--ti3)', marginTop:'1px' }, 'admin@gleelogistics.de')
-        )
+  left.appendChild(fb);
+  /* List */
+  const ls=d({flex:'1',overflowY:'auto'});
+  let filtered=emails;
+  if(APP.gmail.filter==='unread')filtered=emails.filter(e=>e.unread);
+  else if(APP.gmail.filter==='invoices')filtered=emails.filter(e=>e.tag==='Invoice');
+  else if(APP.gmail.filter==='important')filtered=emails.filter(e=>e.tag==='Important'||e.tag==='Urgent');
+  filtered.forEach(em=>{
+    const isSel=APP.gmail.selected&&APP.gmail.selected.id===em.id;
+    const row=d({padding:'12px 16px',borderBottom:'1px solid var(--bd)',cursor:'pointer',background:isSel?'var(--cream2)':em.unread?'var(--cream)':'#fff',borderLeft:isSel?'2px solid var(--t1)':'2px solid transparent',transition:'background .1s'});
+    row.addEventListener('mouseenter',()=>{if(!isSel)row.style.background='var(--cream2)';});
+    row.addEventListener('mouseleave',()=>{if(!isSel)row.style.background=em.unread?'var(--cream)':'#fff';});
+    row.addEventListener('click',()=>{APP.gmail.selected=em;render();});
+    row.appendChild(d({display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'2px'},
+      d({display:'flex',alignItems:'center',gap:'5px'},d({width:'6px',height:'6px',borderRadius:'50%',background:em.unread?'var(--t1)':'transparent',flexShrink:'0'}),sp({fontSize:'11px',fontWeight:em.unread?'600':'400',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:'210px'},em.from)),
+      sp({fontSize:'9px',color:'var(--t3)',flexShrink:'0'},em.date||em.time||'')
+    ));
+    row.appendChild(d({fontSize:'10px',color:'var(--t1)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',paddingLeft:'11px',marginBottom:'2px'},em.subject));
+    row.appendChild(d({fontSize:'9px',color:'var(--t3)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',paddingLeft:'11px'},em.snippet||''));
+    if(em.tag){const te=d({paddingLeft:'11px',marginTop:'4px'});te.appendChild(sp({padding:'1px 5px',fontSize:'7px',letterSpacing:'.1em',textTransform:'uppercase',fontWeight:'700',background:em.tag==='Important'||em.tag==='Urgent'?'var(--t1)':em.tag==='Invoice'?'var(--cream3)':'var(--cream2)',color:em.tag==='Important'||em.tag==='Urgent'?'var(--ti1)':'var(--t2)'},em.tag));row.appendChild(te);}
+    ls.appendChild(row);
+  });
+  if(filtered.length===0)ls.appendChild(d({padding:'40px',textAlign:'center',fontSize:'12px',color:'var(--t3)'},'No emails matching filter'));
+  left.appendChild(ls);inner.appendChild(left);
+  /* Detail */
+  const det=d({flex:'1',background:'#fff',border:'1px solid var(--bd)',display:'flex',flexDirection:'column',overflow:'hidden'});
+  if(!APP.gmail.selected&&filtered[0])APP.gmail.selected=filtered[0];
+  const sel=APP.gmail.selected;
+  if(sel){
+    det.appendChild(d({padding:'18px 20px',borderBottom:'1px solid var(--bd)',flexShrink:'0'},
+      d({display:'flex',gap:'10px',alignItems:'flex-start'},
+        d({width:'38px',height:'38px',borderRadius:'50%',background:'var(--cream2)',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'var(--fd)',fontSize:'12px',fontWeight:'800',color:'var(--t1)',flexShrink:'0'},sel.from.split(' ').map(w2=>w2[0]).join('').slice(0,2).toUpperCase()),
+        d({flex:'1'},d({fontSize:'13px',fontWeight:'600'},sel.from),d({fontSize:'10px',color:'var(--t3)',marginTop:'1px'},(sel.date||sel.time||'')+' \xb7 Gmail'))
       ),
-      div({ marginTop:'10px', padding:'5px 8px', background:'rgba(255,255,255,0.04)', display:'inline-block' },
-        span({ fontSize:'9px', letterSpacing:'0.12em', textTransform:'uppercase', fontWeight:'700', color:'var(--ti3)', fontFamily:'var(--fd)' }, 'Super Admin')
-      )
-    ),
-    ...['Profile Settings','User Management','Notifications','Help & Support'].map(item =>
-      div({ padding:'11px 18px', borderBottom:'1px solid rgba(255,255,255,0.04)', cursor:'pointer', fontSize:'12px', color:'var(--ti2)', display:'flex', alignItems:'center', justifyContent:'space-between' },
-        item, span({ fontSize:'10px', color:'var(--ti3)' }, '→')
-      )
-    ),
-    div({ padding:'11px 18px', cursor:'pointer', fontSize:'12px', color:'var(--ti3)', letterSpacing:'0.06em' }, 'Sign Out')
-  );
-
-  const wrapper = div({});
-  wrapper.appendChild(overlay);
-  wrapper.appendChild(panel);
-  return wrapper;
+      d({fontSize:'13px',fontWeight:'600',color:'var(--t1)',marginTop:'12px'},sel.subject),
+      sel.tag?d({marginTop:'7px'},sp({padding:'2px 7px',fontSize:'8px',letterSpacing:'.1em',textTransform:'uppercase',fontWeight:'700',background:sel.tag==='Important'||sel.tag==='Urgent'?'var(--t1)':sel.tag==='Invoice'?'var(--cream3)':'var(--cream2)',color:sel.tag==='Important'||sel.tag==='Urgent'?'var(--ti1)':'var(--t2)'},sel.tag)):null
+    ));
+    det.appendChild(d({padding:'18px 20px',flex:'1',overflowY:'auto',fontSize:'12px',lineHeight:'1.8',color:'var(--t2)'},sel.snippet||(sel.body||'')));
+    const ra=d({padding:'14px 20px',borderTop:'1px solid var(--bd)',flexShrink:'0'});
+    ra.appendChild(d({fontSize:'9px',letterSpacing:'.14em',textTransform:'uppercase',fontWeight:'700',color:'var(--t3)',marginBottom:'8px',fontFamily:'var(--fd)'},'Reply'));
+    const ta=el('textarea',{placeholder:'Type your reply...',style:{width:'100%',minHeight:'70px',padding:'10px 12px',border:'1px solid var(--bd)',background:'var(--cream)',fontSize:'12px',resize:'vertical',outline:'none',fontFamily:'var(--fb)',color:'var(--t1)'}});
+    ra.appendChild(ta);
+    ra.appendChild(d({display:'flex',justifyContent:'flex-end',gap:'8px',marginTop:'8px'},
+      mkbtn('Discard',false,()=>{ta.value='';}),
+      mkbtn('Send \u2191',true,()=>{alert('Gmail send requires write OAuth scope \u2014 coming in next update!');})
+    ));
+    det.appendChild(ra);
+  }else{det.appendChild(d({flex:'1',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'12px',color:'var(--t3)'},'Select an email to read'));}
+  inner.appendChild(det);w.appendChild(inner);return w;
 }
 
-/* ═══════════════════════════════════════
-   MAIN RENDER
-═══════════════════════════════════════ */
-function getPageContent() {
-  const { section, page, sub } = state;
-  if (section==='dashboard') return renderDashboardOverview();
-  if (section==='email')     return renderEmailPage(page);
-  if (section==='fleet' && page==='overview') return renderFleetOverview();
-  if (section==='fleet' && page==='fleetapp') return renderGenericPage('fleet','fleetapp',null);
-  if (section==='employee' && page==='overview') return renderEmployeeOverview();
-  return renderGenericPage(section, page, sub);
+/* DSY2 ROUTES */
+function renderDSY2(){
+  const total=ROUTES.reduce((s,r)=>s+r.dt,0),done=ROUTES.reduce((s,r)=>s+r.dc,0);
+  const w=d({flex:'1',display:'flex',flexDirection:'column'});w.className='fade';
+  w.appendChild(d({padding:'22px 28px 0',display:'flex',alignItems:'flex-start',justifyContent:'space-between',flexShrink:'0'},
+    d({},d({fontSize:'9px',letterSpacing:'.2em',textTransform:'uppercase',color:'var(--t3)',marginBottom:'5px',fontFamily:'var(--fd)'},'Fleet \xb7 DSY2'),d({fontFamily:'var(--fd)',fontSize:'32px',fontWeight:'900',color:'var(--t1)',lineHeight:'1'},'Live ',sp({fontWeight:'300',color:'var(--t3)'},'Routes')),d({fontSize:'12px',color:'var(--t3)',marginTop:'4px'},'41 routes \xb7 scraped 10:22')),
+    d({display:'flex',gap:'8px',marginTop:'5px'},mkbtn('\u2197 Amazon Portal',false,()=>window.open('https://logistics.amazon.de/operations/execution/dv/routes?navMenuVariant=external&provider=ALL_DRIVERS&selectedDay=2026-04-01&serviceAreaId=79b18918-ed92-47f1-af33-59c03edab660','_blank')),mkbtn('Refresh',true))
+  ));
+  const inner=d({padding:'14px 28px 28px',flex:'1',display:'flex',flexDirection:'column'});
+  const strip=d({display:'grid',gridTemplateColumns:'repeat(5,1fr)',border:'1px solid rgba(0,0,0,.06)',marginBottom:'14px'});
+  [{label:'Total',value:'41',hero:true},{label:'Done',value:String(done),delta:'of '+total},{label:'On Schedule',value:String(ROUTES.filter(r=>r.bh===0).length)},{label:'Behind',value:String(ROUTES.filter(r=>r.bh>0).length)},{label:'Avg Speed',value:'8.4',unit:'s/h'}].forEach((t,i)=>{
+    strip.appendChild(d({background:t.hero?'var(--ti1)':'var(--black)',padding:'16px 18px 12px',borderRight:i<4?'1px solid rgba(255,255,255,.04)':'none'},
+      d({fontSize:'8px',letterSpacing:'.18em',textTransform:'uppercase',color:t.hero?'rgba(0,0,0,.35)':'var(--ti3)',marginBottom:'7px',fontFamily:'var(--fd)'},t.label),
+      d({fontFamily:'var(--fd)',fontSize:'32px',fontWeight:'900',color:t.hero?'var(--black)':'var(--ti1)',lineHeight:'1'},t.value,t.unit?sp({fontSize:'12px',fontWeight:'300',color:t.hero?'rgba(0,0,0,.3)':'var(--ti3)',marginLeft:'2px'},t.unit):null),
+      t.delta?d({fontSize:'9px',color:t.hero?'rgba(0,0,0,.35)':'var(--ti3)',marginTop:'5px'},t.delta):null
+    ));
+  });
+  inner.appendChild(strip);
+  const tbl=d({flex:'1',overflowY:'auto',background:'#fff',border:'1px solid var(--bd)'});
+  const cols='100px 1fr 180px 90px 100px 70px';
+  const hdr=d({display:'grid',gridTemplateColumns:cols,background:'var(--cream2)',borderBottom:'1px solid var(--bd)',position:'sticky',top:'0',zIndex:'1'});
+  ['Route','Driver','Progress','Stops','Deliveries','Behind'].forEach(h=>hdr.appendChild(d({padding:'8px 12px',fontSize:'8px',letterSpacing:'.14em',textTransform:'uppercase',color:'var(--t2)',fontWeight:'700',fontFamily:'var(--fd)'},h)));
+  tbl.appendChild(hdr);
+  ROUTES.forEach((r,i)=>{
+    const red=r.bh>4,amb=r.bh>0&&r.bh<=4;
+    const row=d({display:'grid',gridTemplateColumns:cols,borderBottom:'1px solid var(--bd)',background:red?'#fff8f8':i%2===0?'#fff':'var(--cream)',transition:'background .1s'});
+    row.addEventListener('mouseenter',()=>{row.style.background='var(--cream2)';});
+    row.addEventListener('mouseleave',()=>{row.style.background=red?'#fff8f8':i%2===0?'#fff':'var(--cream)';});
+    row.appendChild(d({padding:'9px 12px',display:'flex',flexDirection:'column',gap:'3px'},sp({fontFamily:'var(--fd)',fontSize:'13px',fontWeight:'900',letterSpacing:'.05em'},r.id),sp({padding:'1px 5px',fontSize:'7px',letterSpacing:'.1em',textTransform:'uppercase',fontWeight:'700',background:red?'#fde8e8':amb?'#fff3e0':'var(--cream2)',color:red?'#c0392b':amb?'#d35400':'var(--t2)',alignSelf:'flex-start'},r.status.replace('_',' '))));
+    row.appendChild(d({padding:'9px 12px',display:'flex',alignItems:'center'},sp({fontSize:'12px',fontWeight:'500',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'},r.driver)));
+    row.appendChild(d({padding:'9px 12px',display:'flex',flexDirection:'column',justifyContent:'center',gap:'4px'},d({height:'3px',background:'var(--cream3)',position:'relative',overflow:'hidden'},d({position:'absolute',top:'0',left:'0',bottom:'0',width:r.pct+'%',background:red?'var(--red)':amb?'var(--amber)':'var(--t1)'})),sp({fontSize:'9px',color:'var(--t3)'},r.pct+'%')));
+    row.appendChild(d({padding:'9px 12px',display:'flex',flexDirection:'column',justifyContent:'center'},sp({fontFamily:'var(--fd)',fontSize:'13px',fontWeight:'700'},r.sc+' / '+r.st),sp({fontSize:'9px',color:'var(--t3)'},'stops')));
+    row.appendChild(d({padding:'9px 12px',display:'flex',flexDirection:'column',justifyContent:'center'},sp({fontFamily:'var(--fd)',fontSize:'13px',fontWeight:'700'},r.dc+' / '+r.dt),sp({fontSize:'9px',color:'var(--t3)'},'packages')));
+    row.appendChild(d({padding:'9px 12px',display:'flex',alignItems:'center'},sp({fontFamily:'var(--fd)',fontSize:'15px',fontWeight:'900',color:red?'var(--red)':amb?'var(--amber)':'var(--green)'},r.bh===0?'\u2713':'+'+r.bh)));
+    tbl.appendChild(row);
+  });
+  inner.appendChild(tbl);w.appendChild(inner);return w;
 }
 
-function render() {
-  const app = document.getElementById('app');
-  app.innerHTML = '';
+/* GENERIC */
+function renderGeneric(sec,pg,sb){
+  const s=NAV.find(n=>n.id===sec),p=s&&s.pages.find(x=>x.id===pg),sub=p&&p.sub&&p.sub.find(x=>x.id===sb);
+  const title=sub?p.label+' / '+sub.label:p?p.label:pg;
+  const w=d({flex:'1',display:'flex',flexDirection:'column'});w.className='fade';
+  w.appendChild(d({padding:'22px 28px 0',flexShrink:'0'},d({fontSize:'9px',letterSpacing:'.2em',textTransform:'uppercase',color:'var(--t3)',marginBottom:'5px',fontFamily:'var(--fd)'},s?s.label:sec),d({fontFamily:'var(--fd)',fontSize:'32px',fontWeight:'900',color:'var(--t1)',lineHeight:'1'},title)));
+  const inner=d({padding:'14px 28px 28px'});
+  inner.appendChild(d({background:'var(--near)',border:'1px solid rgba(255,255,255,.05)',padding:'20px 24px',display:'flex',alignItems:'center',gap:'14px'},
+    d({flex:'1'},d({fontFamily:'var(--fd)',fontSize:'14px',fontWeight:'800',letterSpacing:'.08em',color:'var(--ti1)',marginBottom:'4px'},'Integration Pending \u2014 '+title),d({fontSize:'12px',color:'var(--ti3)'},'Connect your '+(s?s.label:sec)+' data source to activate live data.')),
+    mkbtn('Configure \u2192',true)
+  ));
+  w.appendChild(inner);return w;
+}
 
-  const shell = div({ height:'100vh', display:'flex', flexDirection:'column', overflow:'hidden' });
+/* MODALS */
+function renderModals(){
+  if(!APP.modal)return null;
+  const ov=d({position:'fixed',inset:'0',background:'rgba(0,0,0,.6)',zIndex:'500',display:'flex',alignItems:'center',justifyContent:'center'});
+  ov.addEventListener('click',e=>{if(e.target===ov){APP.modal=null;render();}});
+  if(APP.modal.type==='event'){
+    const ev=APP.modal.data;
+    const m=d({width:'440px',background:'#fff',border:'1px solid var(--bd)',boxShadow:'0 20px 60px rgba(0,0,0,.2)'});
+    const head=d({padding:'18px 20px',borderBottom:'1px solid var(--bd)',display:'flex',alignItems:'flex-start',justifyContent:'space-between'});
+    head.appendChild(d({},
+      d({fontFamily:'var(--fd)',fontSize:'18px',fontWeight:'900',letterSpacing:'.04em'},ev.title),
+      d({fontSize:'11px',color:'var(--t3)',marginTop:'4px'},ev.start.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'})+' \xb7 '+String(ev.start.getHours()).padStart(2,'0')+':'+String(ev.start.getMinutes()).padStart(2,'0')+' \u2013 '+String(ev.end.getHours()).padStart(2,'0')+':'+String(ev.end.getMinutes()).padStart(2,'0')),
+      ev.location?d({fontSize:'11px',color:'var(--t3)',marginTop:'2px'},'Location: '+ev.location):null,
+      ev.organizer?d({fontSize:'11px',color:'var(--t3)',marginTop:'2px'},'Organiser: '+ev.organizer):null
+    ));
+    const xb=d({width:'28px',height:'28px',border:'1px solid var(--bd)',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',fontSize:'16px',color:'var(--t2)',flexShrink:'0'},'\xd7');
+    xb.addEventListener('click',()=>{APP.modal=null;render();});
+    head.appendChild(xb);m.appendChild(head);
+    m.appendChild(d({padding:'14px 20px'},d({display:'flex',gap:'8px',alignItems:'center'},d({width:'10px',height:'10px',borderRadius:'50%',background:ev.color,flexShrink:'0'}),sp({fontSize:'12px',color:'var(--t2)'},(APP.cal.connected?'Outlook Calendar':'Demo Calendar')+' \xb7 '+((APP.user&&APP.user.email)||'')))));
+    ov.appendChild(m);
+  }
+  if(APP.modal.type==='new-event'){
+    const m=d({width:'460px',background:'#fff',border:'1px solid var(--bd)',boxShadow:'0 20px 60px rgba(0,0,0,.2)'});
+    const head=d({padding:'18px 20px',borderBottom:'1px solid var(--bd)',display:'flex',alignItems:'center',justifyContent:'space-between'});
+    head.appendChild(sp({fontFamily:'var(--fd)',fontSize:'16px',fontWeight:'900',letterSpacing:'.06em'},'New Event'));
+    const xb=d({width:'28px',height:'28px',border:'1px solid var(--bd)',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',fontSize:'16px',color:'var(--t2)'},'\xd7');
+    xb.addEventListener('click',()=>{APP.modal=null;render();});
+    head.appendChild(xb);m.appendChild(head);
+    const form=d({padding:'20px'});
+    const inp={};
+    [['title','Event Title','text'],['date','Date','date'],['startTime','Start Time','time'],['endTime','End Time','time'],['location','Location (optional)','text']].forEach(([name,label,type])=>{
+      const row=d({marginBottom:'14px'});
+      row.appendChild(el('label',{style:{fontSize:'9px',letterSpacing:'.16em',textTransform:'uppercase',fontWeight:'700',color:'var(--t3)',fontFamily:'var(--fd)',marginBottom:'5px',display:'block'}},label));
+      const i3=el('input',{type,placeholder:label,style:{width:'100%',padding:'9px 12px',border:'1px solid var(--bd)',background:'var(--cream)',fontFamily:'var(--fb)',fontSize:'12px',color:'var(--t1)',outline:'none'}});
+      inp[name]=i3;row.appendChild(i3);form.appendChild(row);
+    });
+    inp.date.value=new Date().toISOString().slice(0,10);inp.startTime.value='09:00';inp.endTime.value='10:00';
+    form.appendChild(d({display:'flex',justifyContent:'flex-end',gap:'8px',marginTop:'16px',paddingTop:'14px',borderTop:'1px solid var(--bd)'},
+      mkbtn('Cancel',false,()=>{APP.modal=null;render();}),
+      mkbtn('Save Event',true,()=>{
+        const s3=new Date(inp.date.value+'T'+inp.startTime.value);
+        const e3=new Date(inp.date.value+'T'+inp.endTime.value);
+        APP.cal.events.push({id:'local-'+Date.now(),title:inp.title.value||'New Event',start:s3,end:e3,location:inp.location.value||'',color:'#1A1A1A',isAllDay:false,organizer:(APP.user&&APP.user.name)||''});
+        APP.modal=null;render();
+      })
+    ));
+    m.appendChild(form);ov.appendChild(m);
+  }
+  return ov;
+}
 
-  // Topbar
+/* USER MENU */
+function renderUserMenu(){
+  const ov=d({position:'fixed',inset:'0',zIndex:'100'});
+  ov.addEventListener('click',()=>{APP.userMenuOpen=false;render();});
+  const p=d({position:'fixed',top:'52px',right:'0',width:'280px',background:'var(--near)',border:'1px solid rgba(255,255,255,.06)',zIndex:'101',boxShadow:'0 8px 32px rgba(0,0,0,.5)'});
+  p.appendChild(d({padding:'16px 18px',borderBottom:'1px solid rgba(255,255,255,.06)'},
+    d({display:'flex',gap:'10px',alignItems:'center'},
+      APP.user&&APP.user.avatar?el('img',{src:APP.user.avatar,style:{width:'40px',height:'40px',borderRadius:'50%',objectFit:'cover'}}):d({width:'40px',height:'40px',borderRadius:'50%',background:'var(--shade)',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'var(--fd)',fontSize:'14px',fontWeight:'800',color:'var(--ti2)'},(APP.user&&APP.user.initials)||'?'),
+      d({},
+        sp({fontSize:'13px',fontWeight:'600',color:'var(--ti1)'},(APP.user&&APP.user.name)||''),
+        d({fontSize:'10px',color:'var(--ti3)',marginTop:'2px'},(APP.user&&APP.user.email)||''),
+        d({fontSize:'9px',color:'var(--ti3)',marginTop:'3px',fontFamily:'var(--fd)',letterSpacing:'.08em',textTransform:'uppercase'},(ROLES[APP.user&&APP.user.role]&&ROLES[APP.user.role].label)||'')
+      )
+    )
+  ));
+  p.appendChild(d({padding:'12px 18px',borderBottom:'1px solid rgba(255,255,255,.06)',display:'flex',alignItems:'center',justifyContent:'space-between'},
+    d({},sp({fontSize:'11px',color:'var(--ti2)'},'Outlook Calendar'),d({fontSize:'10px',color:APP.cal.connected?'var(--green)':'var(--ti3)',marginTop:'2px'},APP.cal.connected?'\u2713 Connected':'Not connected')),
+    APP.cal.connected?null:mkbtn('Connect',true,async()=>{APP.userMenuOpen=false;await connectOutlook();},{padding:'5px 10px',fontSize:'9px'})
+  ));
+  p.appendChild(d({padding:'12px 18px',borderBottom:'1px solid rgba(255,255,255,.06)'},
+    sp({fontSize:'11px',color:'var(--ti2)'},'Gmail'),
+    d({fontSize:'10px',color:APP.gmail.token?'var(--green)':'var(--ti3)',marginTop:'2px'},APP.gmail.token?'\u2713 '+(APP.user&&APP.user.email):'Connected as demo')
+  ));
+  const so=d({padding:'12px 18px',cursor:'pointer',fontSize:'12px',color:'var(--ti3)'},'\u238b Sign Out');
+  so.addEventListener('click',()=>{APP.user=null;APP.gmail={loading:false,threads:[],selected:null,filter:'all',token:null};APP.cal.connected=false;APP.cal.events=[];APP.userMenuOpen=false;render();});
+  p.appendChild(so);
+  const wr=d({});wr.appendChild(ov);wr.appendChild(p);return wr;
+}
+
+/* MAIN RENDER */
+function getContent(){
+  const{section,page,sub}=APP;
+  if(section==='dashboard'&&page==='overview')return renderDashboard();
+  if(section==='dashboard'&&page==='calendar')return renderCalendar();
+  if(section==='email')return renderEmailPage();
+  if(section==='fleet'&&page==='dsy2')return renderDSY2();
+  return renderGeneric(section,page,sub);
+}
+
+function render(){
+  const app=document.getElementById('app');app.innerHTML='';
+  if(!APP.user){app.appendChild(renderLogin());return;}
+  const shell=d({height:'100vh',display:'flex',flexDirection:'column',overflow:'hidden'});
   shell.appendChild(makeTopbar());
-
-  // Body
-  const body = div({ flex:'1', display:'flex', overflow:'hidden' });
+  const body=d({flex:'1',display:'flex',overflow:'hidden'});
   body.appendChild(makeSidebar());
-
-  // Content area
-  const content = div({ flex:'1', overflowY:'auto', background:'var(--cream)', display:'flex', flexDirection:'column' });
-  content.className = 'dark-scroll';
-  content.appendChild(getPageContent());
-  body.appendChild(content);
-
-  shell.appendChild(body);
-  app.appendChild(shell);
-
-  // User panel overlay
-  if (state.userOpen) app.appendChild(makeUserDropdown());
+  const content=d({flex:'1',overflowY:'auto',background:'var(--cream)',display:'flex',flexDirection:'column'});
+  content.appendChild(getContent());
+  body.appendChild(content);shell.appendChild(body);app.appendChild(shell);
+  if(APP.userMenuOpen)app.appendChild(renderUserMenu());
+  const modal=renderModals();if(modal)app.appendChild(modal);
 }
 
-/* ─── Init ─── */
 render();
+
 </script>
 </body>
 </html>
-ENDOFFILE
