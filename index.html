@@ -125,7 +125,7 @@ const SCHEDULE=[
 
 const ROLES={
   admin:{label:'Admin / Owner',icon:'\u25a3',nav:['dashboard','email','quality','fleet','employee','finance']},
-  ops:{label:'Ops Manager',icon:'\u2b21',nav:['dashboard','email','quality','fleet','employee'],qualityDSY2Only:true},
+  ops:{label:'Ops Manager',icon:'\u2b21',nav:['quality'],qualityDSY2Only:true},
   hr:{label:'HR Manager',icon:'\u25ce',nav:['dashboard','email','employee']}
 };
 
@@ -141,20 +141,20 @@ const NAV=[
 /* Get filtered NAV for current user role */
 function getFilteredNav() {
   const role = APP.user && APP.user.role;
-  const roleConfig = ROLES[role] || ROLES.ops;
+  const roleConfig = ROLES[role] || {};
   const allowed = roleConfig.nav || ['dashboard'];
   const isOps = role === 'ops';
   return NAV
     .filter(n => allowed.includes(n.id))
     .map(n => {
+      // Ops: quality shows DSY2 only (Overview + Reporting), no other pages
       if(isOps && n.id === 'quality'){
-        return {...n,pages:[{id:'dsy2',label:'DSY2',sub:[{id:'overview',label:'Overview'},{id:'reporting',label:'Reporting'}]}]};
-      }
-      if(isOps && n.id === 'fleet'){
-        return {...n,pages:[{id:'dsy2',label:'DSY2 — Live Routes'}]};
-      }
-      if(isOps && n.id === 'employee'){
-        return {...n,pages:[{id:'overview',label:'Overview'},{id:'dsy2',label:'DSY2',badge:'GLEE App'}]};
+        return {...n,pages:[
+          {id:'dsy2',label:'DSY2',sub:[
+            {id:'overview',label:'Overview'},
+            {id:'reporting',label:'Reporting'}
+          ]}
+        ]};
       }
       return n;
     });
@@ -162,7 +162,15 @@ function getFilteredNav() {
 
 
 /* HELPERS */
-function nav(s,p,sb){APP.section=s;APP.page=p||(NAV.find(n=>n.id===s)||{pages:[{id:'overview'}]}).pages[0].id;APP.sub=sb||null;APP.userMenuOpen=false;render();}
+function nav(s,p,sb){
+  APP.section=s;
+  const navItems=getFilteredNav();
+  const sec=navItems.find(n=>n.id===s)||{pages:[{id:'overview'}]};
+  APP.page=p||sec.pages[0].id;
+  APP.sub=sb||null;
+  APP.userMenuOpen=false;
+  render();
+}
 function gdt(){const n=new Date();return{time:n.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'}),date:n.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'})};}
 function el(tag,attrs,...ch){
   const e=document.createElement(tag);
@@ -1046,6 +1054,10 @@ function getContent(){
 function render(){
   const app=document.getElementById('app');app.innerHTML='';
   if(!APP.user){app.appendChild(renderLogin());return;}
+  // Ops managers start on quality if they land on dashboard
+  if(APP.user&&APP.user.role==='ops'&&APP.section==='dashboard'){
+    APP.section='quality';APP.page='dsy2';APP.sub='overview';
+  }
   const shell=d({height:'100vh',display:'flex',flexDirection:'column',overflow:'hidden'});
   shell.appendChild(makeTopbar());
   const body=d({flex:'1',display:'flex',overflow:'hidden'});
