@@ -132,7 +132,7 @@ const ROLES={
 const NAV=[
   {id:'dashboard',label:'Dashboard',pages:[{id:'overview',label:'Overview'},{id:'calendar',label:'Calendar'}]},
   {id:'email',label:'Email',pages:[{id:'overview',label:'Overview'},{id:'dsy2',label:'DSY2'},{id:'dbb3',label:'DBB3'}]},
-  {id:'quality',label:'Quality',pages:[{id:'overview',label:'Overview'},{id:'dsy2',label:'DSY2',sub:[{id:'overview',label:'Overview'},{id:'reporting',label:'Reporting'}]},{id:'dbb3',label:'DBB3',sub:[{id:'overview',label:'Overview'},{id:'reporting',label:'Reporting'}]}]},
+  {id:'quality',label:'Quality',pages:[{id:'overview',label:'Overview'},{id:'dsy2',label:'DSY2',sub:[{id:'overview',label:'Overview'},{id:'kpi',label:'KPI Trends'},{id:'ranking',label:'DA Ranking'},{id:'concessions',label:'Concessions'},{id:'manage',label:'Manage Data'}]},{id:'dbb3',label:'DBB3',sub:[{id:'overview',label:'Overview'},{id:'reporting',label:'Reporting'}]}]},
   {id:'fleet',label:'Fleet',pages:[{id:'overview',label:'Overview'},{id:'dsy2',label:'DSY2 \u2014 Live Routes'},{id:'dbb3',label:'DBB3'}]},
   {id:'employee',label:'Employee',pages:[{id:'overview',label:'Overview'},{id:'dsy2',label:'DSY2',badge:'GLEE App'},{id:'dbb3',label:'DBB3',badge:'GLEE App'},{id:'hr',label:'HR'}]},
   {id:'finance',label:'Finance',pages:[{id:'overview',label:'Overview'},{id:'routecalc',label:'Route Calc',sub:[{id:'dsy2',label:'DSY2'},{id:'dbb3',label:'DBB3'}]},{id:'revenue',label:'Revenue'},{id:'costs',label:'Costs'}]}
@@ -152,7 +152,10 @@ function getFilteredNav() {
         return {...n,pages:[
           {id:'dsy2',label:'DSY2',sub:[
             {id:'overview',label:'Overview'},
-            {id:'reporting',label:'Reporting'}
+            {id:'kpi',label:'KPI Trends'},
+            {id:'ranking',label:'DA Ranking'},
+            {id:'concessions',label:'Concessions'},
+            {id:'manage',label:'Manage Data'}
           ]}
         ]};
       }
@@ -464,6 +467,9 @@ function renderLogin(){
       APP.section='dashboard';APP.page='overview';APP.sub=null;
     }
     APP.gmail.threads=getDemoEmails();
+    // Save session with 4-hour expiry
+    const session={user:APP.user,expires:Date.now()+(4*60*60*1000)};
+    sessionStorage.setItem('gleeSession',JSON.stringify(session));
     render();
   }
 
@@ -566,7 +572,7 @@ function makeSidebar(){
     sp({fontSize:'11px',color:'var(--ti3)'},'\u238b'),
     sp({fontFamily:'var(--fd)',fontSize:'11px',fontWeight:'700',letterSpacing:'.1em',textTransform:'uppercase',color:'var(--ti3)'},'Sign Out')
   );
-  sout.addEventListener('click',()=>{APP.user=null;APP.gmail={loading:false,threads:[],selected:null,filter:'all',token:null};APP.cal={view:'week',date:new Date(),events:[],loading:false,connected:false,msal:null,account:null};render();});
+  sout.addEventListener('click',()=>{APP.user=null;APP.gmail={loading:false,threads:[],selected:null,filter:'all',token:null};APP.cal={view:'week',date:new Date(),events:[],loading:false,connected:false,msal:null,account:null};sessionStorage.removeItem('gleeSession');render();});
   sb.appendChild(sout);
   return sb;
 }
@@ -1066,8 +1072,11 @@ function renderQualityDSY2(sub){
   });
   w.appendChild(tabs);
   // Load quality dashboard in iframe
+  // Map hub sub-page to quality dashboard section
+  const subMap={overview:'overview',kpi:'kpi',ranking:'da-ranking',concessions:'concessions',manage:'manage'};
+  const hash=subMap[sub||'overview']||'overview';
   const frame=el('iframe',{
-    src:'quality.html',
+    src:'quality.html#'+hash,
     style:{
       flex:'1',width:'100%',border:'none',display:'block'
     },
@@ -1089,6 +1098,17 @@ function getContent(){
 
 function render(){
   const app=document.getElementById('app');app.innerHTML='';
+  // Restore session if not logged in
+  if(!APP.user){
+    try{
+      const s=JSON.parse(sessionStorage.getItem('gleeSession')||'null');
+      if(s&&s.user&&s.expires>Date.now()){
+        APP.user=s.user;
+        APP.gmail.threads=getDemoEmails();
+        if(APP.user.role==='ops'){APP.section='quality';APP.page='dsy2';APP.sub='overview';}
+      }
+    }catch(e){}
+  }
   if(!APP.user){app.appendChild(renderLogin());return;}
   // Ops managers only see quality — redirect if anywhere else
   if(APP.user&&APP.user.role==='ops'&&APP.section!=='quality'){
