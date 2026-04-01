@@ -1085,6 +1085,11 @@ function render(){
     }catch(e){}
   }
   if(!APP.user){app.appendChild(renderLogin());return;}
+  // If coming back from quality page (?hub=1), force dashboard
+  if(window.location.search.includes('hub=1')){
+    APP.section='dashboard';APP.page='overview';APP.sub=null;
+    history.replaceState(null,'',window.location.pathname);
+  }
   // Ops managers: only redirect if on a section they can't access
   const opsAllowed=['dashboard','quality'];
   if(APP.user&&APP.user.role==='ops'&&!opsAllowed.includes(APP.section)){
