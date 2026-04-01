@@ -125,7 +125,7 @@ const SCHEDULE=[
 
 const ROLES={
   admin:{label:'Admin / Owner',icon:'\u25a3',nav:['dashboard','email','quality','fleet','employee','finance']},
-  ops:{label:'Ops Manager',icon:'\u2b21',nav:['quality'],qualityDSY2Only:true},
+  ops:{label:'Ops Manager',icon:'\u2b21',nav:['dashboard','quality'],qualityDSY2Only:true},
   hr:{label:'HR Manager',icon:'\u25ce',nav:['dashboard','email','employee']}
 };
 
@@ -149,7 +149,7 @@ function getFilteredNav() {
     .map(n => {
       // Ops: quality shows DSY2 only (Overview + Reporting), no other pages
       if(isOps && n.id === 'quality'){
-        return {...n,pages:[{id:'dsy2',label:'Open Dashboard →'}]};
+        return {...n,pages:[{id:'dsy2',label:'DSY2 Quality'}]};
       }
       return n;
     });
@@ -452,12 +452,8 @@ function renderLogin(){
       role:account.role,
       googleToken:null
     };
-    // Set correct starting page per role
-    if(account.role==='ops'){
-      APP.section='quality';APP.page='dsy2';APP.sub='overview';
-    } else {
-      APP.section='dashboard';APP.page='overview';APP.sub=null;
-    }
+    // All roles start on dashboard
+    APP.section='dashboard';APP.page='overview';APP.sub=null;
     APP.gmail.threads=getDemoEmails();
     // Save session with 4-hour expiry
     const session={user:APP.user,expires:Date.now()+(4*60*60*1000)};
@@ -512,7 +508,14 @@ function makeTopbar(){
   ));
   ub.appendChild(sp({fontSize:'10px',color:'var(--ti3)',marginLeft:'3px'},'\u25be'));
   ub.addEventListener('click',()=>{APP.userMenuOpen=!APP.userMenuOpen;render();});
+  
   bar.appendChild(ub);
+  const soBtn=d({padding:'0 16px',display:'flex',alignItems:'center',borderLeft:'1px solid rgba(255,255,255,.05)',height:'100%',cursor:'pointer',userSelect:'none'});
+  soBtn.appendChild(sp({fontFamily:'var(--fd)',fontSize:'9px',fontWeight:'700',letterSpacing:'.1em',textTransform:'uppercase',color:'var(--ti3)',transition:'color .15s'},'⎋ Sign Out'));
+  soBtn.addEventListener('mouseenter',()=>{soBtn.firstChild.style.color='var(--ti1)';});
+  soBtn.addEventListener('mouseleave',()=>{soBtn.firstChild.style.color='var(--ti3)';});
+  soBtn.addEventListener('click',()=>{APP.user=null;APP.gmail={loading:false,threads:[],selected:null,filter:'all',token:null};APP.cal={view:'week',date:new Date(),events:[],loading:false,connected:false,msal:null,account:null};sessionStorage.removeItem('gleeSession');render();});
+  bar.appendChild(soBtn);
   setInterval(()=>{const t=document.getElementById('clk');if(t)t.textContent=gdt().time;},1000);
   return bar;
 }
@@ -1076,9 +1079,10 @@ function render(){
     }catch(e){}
   }
   if(!APP.user){app.appendChild(renderLogin());return;}
-  // Ops managers only see quality — redirect if anywhere else
-  if(APP.user&&APP.user.role==='ops'&&APP.section!=='quality'){
-    APP.section='quality';APP.page='dsy2';APP.sub=APP.sub||'overview';
+  // Ops managers: only redirect if on a section they can't access
+  const opsAllowed=['dashboard','quality'];
+  if(APP.user&&APP.user.role==='ops'&&!opsAllowed.includes(APP.section)){
+    APP.section='dashboard';APP.page='overview';APP.sub=null;
   }
   const shell=d({height:'100vh',display:'flex',flexDirection:'column',overflow:'hidden'});
   shell.appendChild(makeTopbar());
