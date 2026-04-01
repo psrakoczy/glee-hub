@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GLEE Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;600;700;800;900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --cream:  #F5F5F3;
+  --cream2: #EEECEA;
+  --cream3: #E2E0DC;
+  --black:  #0F0F0F;
+  --near:   #1A1A1A;
+  --dark:   #222222;
+  --mid:    #2C2C2C;
+  --shade:  #383838;
+  --t1:     #1A1A1A;
+  --t2:     #555555;
+  --t3:     #888888;
+  --t4:     #AAAAAA;
+  --ti1:    #F0F0EE;
+  --ti2:    #AAAAAA;
+  --ti3:    #585858;
+  --bd:     rgba(0,0,0,0.08);
+  --bdd:    rgba(255,255,255,0.06);
+  --fd: 'Barlow Condensed', sans-serif;
+  --fb: 'Barlow', sans-serif;
+}
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+html,body,#app { height:100%; font-family:var(--fb); background:var(--black); -webkit-font-smoothing:antialiased; overflow:hidden; }
+button { font-family:var(--fb); cursor:pointer; border:none; background:none; }
+::-webkit-scrollbar { width:3px; height:3px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--shade); border-radius:2px; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);} }
+.fade  { animation:fadeUp 0.25s ease both; }
+.fade1 { animation:fadeUp 0.25s 0.04s ease both; }
+.fade2 { animation:fadeUp 0.25s 0.08s ease both; }
+.fade3 { animation:fadeUp 0.25s 0.12s ease both; }
+.fade4 { animation:fadeUp 0.25s 0.16s ease both; }
+.fade5 { animation:fadeUp 0.25s 0.20s ease both; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+/* ═══════════════════════════════════════
+   NAV STRUCTURE (from sketch)
+═══════════════════════════════════════ */
+const NAV = [
+  {
+    id:'dashboard', label:'Dashboard',
+    pages:[
+      { id:'overview', label:'Overview' }
+    ]
+  },
+  {
+    id:'email', label:'Email',
+    pages:[
+      { id:'overview', label:'Overview' },
+      { id:'dsy2',     label:'DSY2' },
+      { id:'dbb3',     label:'DBB3' }
+    ]
+  },
+  {
+    id:'quality', label:'Quality',
+    pages:[
+      { id:'overview', label:'Overview' },
+      { id:'dsy2', label:'DSY2', sub:[
+        { id:'overview',  label:'Overview' },
+        { id:'reporting', label:'Reporting' }
+      ]},
+      { id:'dbb3', label:'DBB3', sub:[
+        { id:'overview',  label:'Overview' },
+        { id:'reporting', label:'Reporting' }
+      ]}
+    ]
+  },
+  {
+    id:'fleet', label:'Fleet',
+    pages:[
+      { id:'overview',  label:'Overview' },
+      { id:'fleetapp',  label:'Fleet App' },
+      { id:'dsy2',      label:'DSY2' },
+      { id:'dbb3',      label:'DBB3' }
+    ]
+  },
+  {
+    id:'employee', label:'Employee',
+    pages:[
+      { id:'overview', label:'Overview' },
+      { id:'dsy2',     label:'DSY2',  badge:'GLEE App' },
+      { id:'dbb3',     label:'DBB3',  badge:'GLEE App' },
+      { id:'hr',       label:'HR' }
+    ]
+  },
+  {
+    id:'finance', label:'Finance',
+    pages:[
+      { id:'overview', label:'Overview' },
+      { id:'routecalc', label:'Route Calc', sub:[
+        { id:'dsy2', label:'DSY2' },
+        { id:'dbb3', label:'DBB3' }
+      ]},
+      { id:'revenue', label:'Revenue' },
+      { id:'costs',   label:'Costs' }
+    ]
+  }
+];
+
+/* ═══════════════════════════════════════
+   STATE
+═══════════════════════════════════════ */
+let state = {
+  section: 'dashboard',
+  page:    'overview',
+  sub:     null,
+  time:    '',
+  date:    '',
+  userOpen: false
+};
+
+function getDateTime() {
+  const now = new Date();
+  const time = now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const date = now.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+  return { time, date };
+}
+
+function navigate(section, page, sub) {
+  state.section = section;
+  state.page    = page || getDefaultPage(section);
+  state.sub     = sub || null;
+  state.userOpen = false;
+  render();
+}
+
+function getDefaultPage(sectionId) {
+  const sec = NAV.find(n=>n.id===sectionId);
+  return sec && sec.pages[0] ? sec.pages[0].id : 'overview';
+}
+
+/* ═══════════════════════════════════════
+   KPI / CONTENT DATA
+═══════════════════════════════════════ */
+const KPI = {
+  dashboard: [
+    { label:'Active Routes',   value:'4',    unit:'live',  delta:'↑ 1 vs yesterday' },
+    { label:'Unread Emails',   value:'3',    unit:'',      delta:'2 invoices' },
+    { label:'On-Time Rate',    value:'97',   unit:'%',     delta:'Target 95%', hero:true },
+    { label:'Staff Today',     value:'7',    unit:'/8',    delta:'1 sick' },
+    { label:'Revenue MTD',     value:'€84k', unit:'',      delta:'↑ 12% vs last month' }
+  ],
+  email: {
+    overview:[ {label:'Total Emails',value:'47',delta:'Today'},{label:'Unread',value:'3',delta:'2 invoices',hero:true},{label:'Gmail',value:'28',delta:'Connected'},{label:'Outlook',value:'19',delta:'Connected'} ],
+    dsy2:[     {label:'DSY2 Emails', value:'18',delta:'This week'},{label:'Unread',value:'1',delta:'',hero:true},{label:'Invoices',value:'4',delta:'Auto-saved'},{label:'Replied',value:'13',delta:'Today'} ],
+    dbb3:[     {label:'DBB3 Emails', value:'29',delta:'This week'},{label:'Unread',value:'2',delta:'',hero:true},{label:'Invoices',value:'6',delta:'Auto-saved'},{label:'Replied',value:'21',delta:'Today'} ]
+  },
+  quality: {
+    overview:[ {label:'Open Issues',value:'12',delta:'This week'},{label:'Resolved',value:'34',delta:'↑ 8%',hero:true},{label:'DSY2 Issues',value:'7',delta:'Active'},{label:'DBB3 Issues',value:'5',delta:'Active'} ],
+    dsy2:{
+      overview:[  {label:'DSY2 Issues',value:'7',delta:'Open'},{label:'Resolved',value:'21',delta:'This month',hero:true},{label:'Critical',value:'1',delta:'High priority'},{label:'Avg Days',value:'3.2',delta:'To resolve'} ],
+      reporting:[ {label:'Reports',value:'14',delta:'This quarter'},{label:'Compliance',value:'98',unit:'%',delta:'On target',hero:true},{label:'Audits',value:'3',delta:'Completed'},{label:'Pending',value:'1',delta:'Due Friday'} ]
+    },
+    dbb3:{
+      overview:[  {label:'DBB3 Issues',value:'5',delta:'Open'},{label:'Resolved',value:'13',delta:'This month',hero:true},{label:'Critical',value:'0',delta:'All clear'},{label:'Avg Days',value:'2.8',delta:'To resolve'} ],
+      reporting:[ {label:'Reports',value:'9',delta:'This quarter'},{label:'Compliance',value:'96',unit:'%',delta:'Below target',hero:true},{label:'Audits',value:'2',delta:'Completed'},{label:'Pending',value:'2',delta:'Due next week'} ]
+    }
+  },
+  fleet: {
+    overview:[  {label:'Active Vehicles',value:'5',delta:'On route'},{label:'Fleet Total',value:'6',unit:'vehicles',delta:'',hero:true},{label:'In Maintenance',value:'1',delta:'Est. 14:00'},{label:'On-Time',value:'97',unit:'%',delta:'Today'} ],
+    fleetapp:[  {label:'Live Tracking',value:'4',delta:'Vehicles'},{label:'Avg Speed',value:'82',unit:'km/h',delta:'Hamburg corridor',hero:true},{label:'Fuel Used',value:'340',unit:'L',delta:'Today'},{label:'Distance',value:'1,240',unit:'km',delta:'Today'} ],
+    dsy2:[      {label:'DSY2 Routes',value:'3',delta:'Active'},{label:'Deliveries',value:'12',delta:'Today',hero:true},{label:'On Time',value:'11',delta:'92%'},{label:'Delayed',value:'1',delta:'Hamburg A9'} ],
+    dbb3:[      {label:'DBB3 Routes',value:'2',delta:'Active'},{label:'Deliveries',value:'8',delta:'Today',hero:true},{label:'On Time',value:'8',delta:'100%'},{label:'Delayed',value:'0',delta:'All clear'} ]
+  },
+  employee: {
+    overview:[ {label:'Total Staff',value:'8',delta:'Registered'},{label:'On Duty',value:'7',unit:'/8',delta:'',hero:true},{label:'On Route',value:'4',delta:'Drivers'},{label:'Sick Today',value:'1',delta:'K. Richter'} ],
+    dsy2:[     {label:'DSY2 Staff',value:'4',delta:'Assigned'},{label:'Active',value:'3',unit:'/4',delta:'',hero:true},{label:'On Route',value:'2',delta:'Now'},{label:'Shifts Today',value:'3',delta:'Morning'} ],
+    dbb3:[     {label:'DBB3 Staff',value:'4',delta:'Assigned'},{label:'Active',value:'4',unit:'/4',delta:'',hero:true},{label:'On Route',value:'2',delta:'Now'},{label:'Sick',value:'1',delta:'K. Richter'} ],
+    hr:[       {label:'Open Contracts',value:'2',delta:'Review needed'},{label:'Leave Requests',value:'1',delta:'Pending',hero:true},{label:'Training Due',value:'3',delta:'This month'},{label:'New Hires',value:'1',delta:'Starting Monday'} ]
+  },
+  finance: {
+    overview:[   {label:'Revenue MTD',value:'€84k',delta:'↑ 12%'},{label:'Costs MTD',value:'€61k',delta:'↑ 4%',hero:true},{label:'Margin',value:'27',unit:'%',delta:'Target 25%'},{label:'Invoices Due',value:'6',delta:'This week'} ],
+    routecalc:{
+      dsy2:[     {label:'DSY2 Routes',value:'48',delta:'This month'},{label:'Avg Cost',value:'€340',delta:'Per route',hero:true},{label:'Total Cost',value:'€16.3k',delta:'MTD'},{label:'Savings',value:'€1.2k',delta:'Optimised'} ],
+      dbb3:[     {label:'DBB3 Routes',value:'31',delta:'This month'},{label:'Avg Cost',value:'€290',delta:'Per route',hero:true},{label:'Total Cost',value:'€9.0k',delta:'MTD'},{label:'Savings',value:'€0.8k',delta:'Optimised'} ]
+    },
+    revenue:[    {label:'Total Revenue',value:'€84k',delta:'MTD'},{label:'vs Target',value:'+12',unit:'%',delta:'On track',hero:true},{label:'Top Route',value:'HH–B',delta:'€28k MTD'},{label:'Invoiced',value:'41',delta:'This month'} ],
+    costs:[      {label:'Total Costs',value:'€61k',delta:'MTD'},{label:'Fuel',value:'€18k',delta:'29% of costs',hero:true},{label:'Labour',value:'€31k',delta:'51% of costs'},{label:'Maintenance',value:'€12k',delta:'20% of costs'} ]
+  }
+};
+
+const EMAILS = [
+  { id:1, from:'Müller Transport GmbH', addr:'mueller@transport.de', src:'Gmail',   subj:'Invoice #2024-0341 — February services',    time:'08:12', unread:true,  tag:'Invoice',  body:'Dear GLEE Logistics team,\n\nPlease find attached invoice #2024-0341 for logistics services rendered during February 2026.\n\nTotal: €4,820.00\nPayment terms: 30 days net\nReference: GL-FEB-2026\n\nKind regards,\nMüller Transport GmbH' },
+  { id:2, from:'Logistics HQ Berlin',   addr:'ops@lhq-berlin.de',   src:'Outlook', subj:'Q1 Route Optimisation — Action Required',    time:'07:55', unread:true,  tag:'Urgent',   body:'Hi,\n\nFollowing our Q1 review, we need your feedback on proposed route changes for the Hamburg–Berlin corridor by end of business today.\n\nKey changes:\n• Rerouting via A24 to avoid A9 congestion\n• Consolidating 3 daily runs into 2\n• New partner depot in Magdeburg\n\nPlease review and respond.\n\nRegards,\nLogistics HQ Berlin' },
+  { id:3, from:'Klaus Richter',         addr:'k.richter@glee.de',   src:'Gmail',   subj:'Sick day today — driver replacement needed', time:'07:30', unread:true,  tag:'',         body:'Hi team,\n\nUnfortunately I am unwell today and will not be able to complete my morning route (Chemnitz → Dresden).\n\nCould someone arrange cover? My vehicle is fuelled and ready at Depot A.\n\nSorry for the short notice.\nKlaus' },
+  { id:4, from:'Fuel Supplies AG',      addr:'billing@fuel-ag.de',  src:'Outlook', subj:'Invoice #FS-0892 — March fuel delivery',      time:'06:45', unread:false, tag:'Invoice',  body:'Dear GLEE Logistics,\n\nPlease find attached invoice #FS-0892 for fuel deliveries completed in March 2026.\n\nTotal: €12,340.00\nPayment terms: 14 days\n\nKind regards,\nFuel Supplies AG' },
+  { id:5, from:'Sandra Koch — HR',      addr:'s.koch@glee.de',      src:'Gmail',   subj:'New employee contract for review',            time:'Yesterday', unread:false, tag:'',     body:'Hi,\n\nPlease review and sign the attached employment contract for our new driver joining next Monday.\n\nContract details are in Drive: /HR/Contracts/NewHire_March2026.pdf\n\nSandra' }
+];
+
+const FLEET = [
+  { plate:'HH-GL 4421', type:'Mercedes Actros', driver:'Jonas Weber',    route:'Hamburg → Berlin',   status:'route', pct:72, eta:'11:30' },
+  { plate:'C-GL 1197',  type:'MAN TGX',         driver:'Anna Schmidt',   route:'Chemnitz → Leipzig', status:'route', pct:35, eta:'12:45' },
+  { plate:'L-GL 0088',  type:'Volvo FH',         driver:'Unassigned',     route:'Depot A — Standby',  status:'depot', pct:100,eta:'Ready' },
+  { plate:'B-GL 2241',  type:'MAN TGX',          driver:'T. Hoffmann',   route:'Berlin → Hamburg',   status:'route', pct:58, eta:'14:00' },
+  { plate:'HH-GL 3302', type:'Mercedes Actros',  driver:'Out of service', route:'Brake inspection',   status:'maint', pct:60, eta:'~14:00' },
+  { plate:'C-GL 0055',  type:'Volvo FH',          driver:'P. Braun',     route:'Chemnitz → Dresden', status:'route', pct:89, eta:'10:30' }
+];
+
+const STAFF = [
+  { init:'JW', name:'Jonas Weber',    role:'HGV Driver',        status:'On Route',  section:'DSY2' },
+  { init:'AS', name:'Anna Schmidt',   role:'HGV Driver',        status:'On Route',  section:'DSY2' },
+  { init:'KR', name:'Klaus Richter',  role:'HGV Driver',        status:'Sick',      section:'DBB3' },
+  { init:'MF', name:'M. Fischer',     role:'Ops Manager',       status:'In Office', section:'DBB3' },
+  { init:'SK', name:'Sandra Koch',    role:'HR Manager',        status:'In Office', section:'DBB3' },
+  { init:'LB', name:'Laura Bauer',    role:'Finance Controller',status:'On Leave',  section:'DSY2' },
+  { init:'TH', name:'T. Hoffmann',    role:'HGV Driver',        status:'On Route',  section:'DBB3' },
+  { init:'PB', name:'P. Braun',       role:'HGV Driver',        status:'On Route',  section:'DSY2' }
+];
+
+/* ═══════════════════════════════════════
+   RENDER HELPERS
+═══════════════════════════════════════ */
+function el(tag, attrs, ...children) {
+  const e = document.createElement(tag);
+  if (attrs) Object.entries(attrs).forEach(([k,v]) => {
+    if (k === 'style' && typeof v === 'object') Object.assign(e.style, v);
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2).toLowerCase(), v);
+    else e.setAttribute(k, v);
+  });
+  children.flat().forEach(c => {
+    if (c === null || c === undefined) return;
+    e.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+  });
+  return e;
+}
+
+function div(style, ...children) { return el('div', {style}, ...children); }
+function span(style, text) { return el('span', {style}, text); }
+function txt(text) { return document.createTextNode(text); }
+
+const S = {
+  topbar:   { display:'flex', alignItems:'center', height:'52px', background:' var(--black)', borderBottom:'1px solid rgba(255,255,255,0.05)', flexShrink:'0', gap:'0' },
+  sidebarW: { width:'210px', background:'var(--near)', borderRight:'1px solid rgba(255,255,255,0.04)', display:'flex', flexDirection:'column', flexShrink:'0', overflowY:'auto' },
+  content:  { flex:'1', overflowY:'auto', background:'var(--cream)', display:'flex', flexDirection:'column' },
+  panel:    { background:'#fff', border:'1px solid var(--bd)', overflow:'hidden' },
+  panelD:   { background:'var(--near)', border:'1px solid rgba(255,255,255,0.05)', overflow:'hidden' },
+};
+
+/* ═══════════════════════════════════════
+   COMPONENTS
+═══════════════════════════════════════ */
+
+function makeTopbar() {
+  const { time, date } = getDateTime();
+
+  const logo = div({ padding:'0 24px', display:'flex', alignItems:'center', gap:'6px', borderRight:'1px solid rgba(255,255,255,0.05)', flexShrink:'0', fontFamily:'var(--fd)', fontSize:'18px', fontWeight:'900', letterSpacing:'0.1em', color:'var(--ti1)', height:'100%', cursor:'default' },
+    span({}, 'GLEE'),
+    span({ fontWeight:'300', opacity:'0.4', marginLeft:'2px' }, ' HUB')
+  );
+
+  const clock = el('div', { id:'topbar-clock', style:{ padding:'0 28px', display:'flex', alignItems:'center', gap:'20px', flex:'1' } });
+
+  const dateEl = div({ fontSize:'12px', fontWeight:'400', color:'var(--ti3)', fontFamily:'var(--fb)', letterSpacing:'0.04em' }, date);
+  const timeEl = el('div', { id:'live-time', style:{ fontFamily:'var(--fd)', fontSize:'20px', fontWeight:'700', letterSpacing:'0.1em', color:'var(--ti1)' } }, time);
+
+  clock.appendChild(dateEl);
+  clock.appendChild(timeEl);
+
+  // User panel
+  const userBtn = div({
+    display:'flex', alignItems:'center', gap:'10px', padding:'0 20px', height:'100%',
+    borderLeft:'1px solid rgba(255,255,255,0.05)', cursor:'pointer', userSelect:'none'
+  },
+    div({ width:'30px', height:'30px', borderRadius:'50%', background:'var(--shade)', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'var(--fd)', fontSize:'11px', fontWeight:'800', color:'var(--ti2)', flexShrink:'0' }, 'AU'),
+    div({ display:'flex', flexDirection:'column', gap:'1px' },
+      span({ fontFamily:'var(--fd)', fontSize:'12px', fontWeight:'700', letterSpacing:'0.06em', color:'var(--ti1)' }, 'Admin User'),
+      span({ fontSize:'10px', color:'var(--ti3)' }, 'Super Admin')
+    ),
+    span({ fontSize:'10px', color:'var(--ti3)', marginLeft:'4px' }, '▾')
+  );
+  userBtn.addEventListener('click', () => {
+    state.userOpen = !state.userOpen;
+    render();
+  });
+
+  const wrapper = div({ display:'flex', alignItems:'stretch', height:'100%', marginLeft:'auto' });
+  wrapper.appendChild(userBtn);
+
+  const topbar = div(S.topbar);
+  topbar.appendChild(logo);
+  topbar.appendChild(clock);
+  topbar.appendChild(wrapper);
+
+  // Start clock ticking
+  setInterval(() => {
+    const t = document.getElementById('live-time');
+    if (t) t.textContent = getDateTime().time;
+  }, 1000);
+
+  return topbar;
+}
+
+function makeSidebar() {
+  const sidebar = div(S.sidebarW);
+
+  // Section divider label
+  function sectionLabel(text) {
+    return div({ padding:'14px 18px 6px', fontSize:'8px', letterSpacing:'0.2em', textTransform:'uppercase', color:'var(--ti3)', fontWeight:'700', fontFamily:'var(--fd)' }, text);
+  }
+
+  NAV.forEach((section, si) => {
+    // Section header
+    const isActive = state.section === section.id;
+
+    const hoverStyle = isActive
+      ? { background:'rgba(255,255,255,0.06)', borderLeft:'2px solid var(--ti1)' }
+      : {};
+
+    const secBtn = div({
+      display:'flex', alignItems:'center', gap:'10px', padding:'10px 18px',
+      cursor:'pointer', userSelect:'none', transition:'background 0.15s',
+      borderLeft: isActive ? '2px solid var(--ti1)' : '2px solid transparent',
+      background: isActive ? 'rgba(255,255,255,0.05)' : 'transparent',
+      marginTop: si > 0 ? '2px' : '8px'
+    },
+      span({ fontSize:'13px', opacity: isActive ? '1' : '0.5', transition:'opacity 0.15s' }, getSectionIcon(section.id)),
+      span({ fontFamily:'var(--fd)', fontSize:'12px', fontWeight:'800', letterSpacing:'0.1em', textTransform:'uppercase', color: isActive ? 'var(--ti1)' : 'var(--ti3)', transition:'color 0.15s' }, section.label)
+    );
+    secBtn.addEventListener('mouseenter', () => { if (!isActive) secBtn.style.background = 'rgba(255,255,255,0.03)'; });
+    secBtn.addEventListener('mouseleave', () => { if (!isActive) secBtn.style.background = 'transparent'; });
+    secBtn.addEventListener('click', () => navigate(section.id, section.pages[0].id, null));
+    sidebar.appendChild(secBtn);
+
+    // Sub-pages (only show if section is active)
+    if (isActive && section.pages.length > 1) {
+      section.pages.forEach(page => {
+        const isPageActive = state.page === page.id && !state.sub;
+        const hasChildren = page.sub && page.sub.length > 0;
+
+        const pageBtn = div({
+          display:'flex', alignItems:'center', gap:'6px', padding:'7px 18px 7px 38px',
+          cursor:'pointer', userSelect:'none', background: isPageActive ? 'rgba(255,255,255,0.04)' : 'transparent',
+          transition:'background 0.15s'
+        },
+          span({ fontSize:'9px', color:'var(--ti3)' }, '→'),
+          span({ fontFamily:'var(--fd)', fontSize:'11px', fontWeight: isPageActive ? '700' : '600', letterSpacing:'0.08em', textTransform:'uppercase', color: isPageActive ? 'var(--ti1)' : 'var(--ti3)', transition:'color 0.15s' }, page.label),
+          page.badge ? span({ marginLeft:'4px', padding:'1px 5px', fontSize:'7px', fontWeight:'700', letterSpacing:'0.08em', background:'rgba(255,255,255,0.06)', color:'var(--ti3)' }, page.badge) : null
+        );
+        pageBtn.addEventListener('mouseenter', () => { pageBtn.style.background = 'rgba(255,255,255,0.03)'; });
+        pageBtn.addEventListener('mouseleave', () => { pageBtn.style.background = isPageActive ? 'rgba(255,255,255,0.04)' : 'transparent'; });
+        pageBtn.addEventListener('click', e => {
+          e.stopPropagation();
+          if (hasChildren) navigate(section.id, page.id, page.sub[0].id);
+          else navigate(section.id, page.id, null);
+        });
+        sidebar.appendChild(pageBtn);
+
+        // Third-level (sub-pages) if parent page is active
+        if (hasChildren && state.page === page.id) {
+          page.sub.forEach(subpage => {
+            const isSubActive = state.sub === subpage.id;
+            const subBtn = div({
+              display:'flex', alignItems:'center', gap:'6px', padding:'6px 18px 6px 52px',
+              cursor:'pointer', userSelect:'none', background: isSubActive ? 'rgba(255,255,255,0.04)' : 'transparent',
+              transition:'background 0.15s'
+            },
+              span({ fontSize:'8px', color:'var(--ti3)', opacity:'0.5' }, '→'),
+              span({ fontFamily:'var(--fd)', fontSize:'10px', fontWeight: isSubActive ? '700' : '500', letterSpacing:'0.08em', textTransform:'uppercase', color: isSubActive ? 'var(--ti1)' : 'var(--ti3)', transition:'color 0.15s' }, subpage.label)
+            );
+            subBtn.addEventListener('mouseenter', () => { subBtn.style.background = 'rgba(255,255,255,0.03)'; });
+            subBtn.addEventListener('mouseleave', () => { subBtn.style.background = isSubActive ? 'rgba(255,255,255,0.04)' : 'transparent'; });
+            subBtn.addEventListener('click', e => { e.stopPropagation(); navigate(section.id, page.id, subpage.id); });
+            sidebar.appendChild(subBtn);
+          });
+        }
+      });
+    }
+
+    // Divider after each section
+    sidebar.appendChild(div({ height:'1px', background:'rgba(255,255,255,0.04)', margin:'6px 0' }));
+  });
+
+  return sidebar;
+}
+
+function getSectionIcon(id) {
+  return { dashboard:'▣', email:'✉', quality:'◈', fleet:'⬡', employee:'◎', finance:'◇' }[id] || '○';
+}
+
+/* ── KPI strip ── */
+function makeKpiStrip(tiles) {
+  if (!tiles || !tiles.length) return div({});
+  const strip = div({ display:'grid', gridTemplateColumns:`repeat(${tiles.length}, 1fr)`, gap:'0', border:'1px solid rgba(0,0,0,0.06)', marginBottom:'16px' });
+  tiles.forEach((t, i) => {
+    const tile = div({
+      background: t.hero ? 'var(--ti1)' : 'var(--black)',
+      padding:'20px 20px 16px',
+      borderRight: i < tiles.length-1 ? (t.hero ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(255,255,255,0.04)') : 'none',
+      position:'relative', overflow:'hidden'
+    },
+      div({ fontSize:'8px', letterSpacing:'0.18em', textTransform:'uppercase', color: t.hero ? 'rgba(0,0,0,0.35)' : 'var(--ti3)', marginBottom:'10px', fontFamily:'var(--fd)' }, t.label),
+      div({ fontFamily:'var(--fd)', fontSize:'40px', fontWeight:'900', color: t.hero ? 'var(--black)' : 'var(--ti1)', lineHeight:'1' },
+        t.value,
+        t.unit ? span({ fontSize:'15px', fontWeight:'300', color: t.hero ? 'rgba(0,0,0,0.3)' : 'var(--ti3)', marginLeft:'3px' }, t.unit) : null
+      ),
+      div({ fontSize:'10px', color: t.hero ? 'rgba(0,0,0,0.35)' : 'var(--ti3)', marginTop:'7px' }, t.delta || ' ')
+    );
+    strip.appendChild(tile);
+  });
+  return strip;
+}
+
+/* ── Page header ── */
+function makePageHead(eyebrow, title, dimTitle, sub, actions) {
+  return div({ padding:'28px 32px 0', display:'flex', alignItems:'flex-start', justifyContent:'space-between', flexShrink:'0' },
+    div({ },
+      div({ fontSize:'9px', letterSpacing:'0.2em', textTransform:'uppercase', color:'var(--t3)', marginBottom:'6px', fontFamily:'var(--fd)' }, eyebrow),
+      div({ fontFamily:'var(--fd)', fontSize:'38px', fontWeight:'900', color:'var(--t1)', lineHeight:'1' },
+        title,
+        dimTitle ? span({ fontWeight:'300', color:'var(--t3)', marginLeft:'8px' }, dimTitle) : null
+      ),
+      sub ? div({ fontSize:'12px', color:'var(--t3)', marginTop:'5px' }, sub) : null
+    ),
+    actions ? div({ display:'flex', gap:'8px', marginTop:'6px' }, ...actions) : null
+  );
+}
+
+/* ── Button ── */
+function makeBtn(label, solid, onClick) {
+  const btn = div({
+    display:'inline-flex', alignItems:'center', padding:'9px 18px',
+    background: solid ? 'var(--black)' : 'transparent',
+    color: solid ? 'var(--ti1)' : 'var(--t1)',
+    border: solid ? 'none' : '1px solid var(--t1)',
+    fontFamily:'var(--fd)', fontSize:'11px', fontWeight:'700',
+    letterSpacing:'0.1em', textTransform:'uppercase', cursor:'pointer',
+    userSelect:'none', transition:'opacity 0.15s'
+  }, label);
+  btn.addEventListener('click', onClick || (()=>{}));
+  btn.addEventListener('mouseenter', () => { btn.style.opacity = '0.8'; });
+  btn.addEventListener('mouseleave', () => { btn.style.opacity = '1'; });
+  return btn;
+}
+
+/* ── Panel wrapper ── */
+function makePanel(children, dark) {
+  const p = div(dark ? S.panelD : S.panel, ...children);
+  return p;
+}
+
+function makePanelHead(title, actionLabel, onAction, dark) {
+  return div({
+    padding:'13px 18px', borderBottom: dark ? '1px solid rgba(255,255,255,0.06)' : '1px solid var(--bd)',
+    display:'flex', alignItems:'center', justifyContent:'space-between'
+  },
+    div({ fontFamily:'var(--fd)', fontSize:'11px', fontWeight:'800', letterSpacing:'0.12em', textTransform:'uppercase', color: dark ? 'var(--ti1)' : 'var(--t1)' }, title),
+    actionLabel ? div({ fontSize:'9px', letterSpacing:'0.1em', textTransform:'uppercase', color: dark ? 'var(--ti3)' : 'var(--t2)', cursor:'pointer', fontWeight:'600' }, actionLabel) : null
+  );
+}
+
+/* ═══════════════════════════════════════
+   PAGE RENDERERS
+═══════════════════════════════════════ */
+
+function renderDashboardOverview() {
+  const body = div({ flex:'1', overflowY:'auto' }, ...['fade']);
+  body.className = 'fade';
+
+  const head = makePageHead('Today', 'Operations', 'Overview', 'Saturday 28 Mar 2026 · Leipzig, DE', [
+    makeBtn('Export', false),
+    makeBtn('+ New Task', true)
+  ]);
+
+  const kpi = makeKpiStrip(KPI.dashboard);
+
+  // Two column grid
+  const grid = div({ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'14px' });
+
+  // — Emails panel —
+  let selectedEmail = null;
+
+  const emailPanel = makePanel([makePanelHead('Recent Emails', 'Open Hub →')]);
+  EMAILS.slice(0,4).forEach(em => {
+    const row = div({
+      padding:'11px 18px', borderBottom:'1px solid var(--bd)', cursor:'pointer',
+      background: em.unread ? 'var(--cream)' : '#fff', transition:'background 0.15s'
+    },
+      div({ display:'flex', alignItems:'center', gap:'6px', marginBottom:'2px' },
+        em.unread ? div({ width:'6px', height:'6px', borderRadius:'50%', background:'var(--t1)', flexShrink:'0' }) : div({ width:'6px', height:'6px', flexShrink:'0' }),
+        span({ fontSize:'12px', fontWeight: em.unread ? '600' : '400', flex:'1' }, em.from),
+        span({ fontSize:'10px', color:'var(--t3)' }, em.time)
+      ),
+      div({ fontSize:'11px', color:'var(--t1)', paddingLeft:'12px', overflow:'hidden', whiteSpace:'nowrap', textOverflow:'ellipsis' }, em.subj),
+      em.tag ? div({ paddingLeft:'12px', marginTop:'4px' }, span({ padding:'2px 6px', fontSize:'8px', letterSpacing:'0.1em', textTransform:'uppercase', fontWeight:'700', background: em.tag==='Urgent'?'var(--t1)':'var(--cream3)', color: em.tag==='Urgent'?'var(--ti1)':'var(--t1)' }, em.tag)) : null
+    );
+    row.addEventListener('mouseenter', () => { row.style.background = 'var(--cream2)'; });
+    row.addEventListener('mouseleave', () => { row.style.background = em.unread ? 'var(--cream)' : '#fff'; });
+    emailPanel.appendChild(row);
+  });
+
+  // — Fleet panel —
+  const fleetPanel = makePanel([makePanelHead('Fleet Status', 'View All →', ()=>navigate('fleet','overview'), true)], true);
+  FLEET.slice(0,4).forEach(v => {
+    const row = div({ padding:'12px 18px', borderBottom:'1px solid rgba(255,255,255,0.05)', display:'flex', alignItems:'center', gap:'12px' },
+      div({ flex:'1' },
+        div({ display:'flex', justifyContent:'space-between', marginBottom:'5px' },
+          span({ fontSize:'12px', fontWeight:'500', color:'var(--ti1)', fontFamily:'var(--fd)', letterSpacing:'0.04em' }, v.plate),
+          span({ fontSize:'10px', color:'var(--ti3)' }, v.route)
+        ),
+        div({ height:'2px', background:'var(--shade)', position:'relative', overflow:'hidden' },
+          div({ position:'absolute', top:'0', left:'0', bottom:'0', width: v.pct+'%', background: v.status==='maint'?'#555':'var(--ti2)' })
+        ),
+        div({ display:'flex', justifyContent:'space-between', marginTop:'4px' },
+          span({ fontSize:'9px', color:'var(--ti3)' }, v.pct+'%'),
+          span({ fontSize:'9px', color:'var(--ti3)' }, 'ETA '+v.eta)
+        )
+      ),
+      span({ padding:'2px 6px', fontSize:'8px', letterSpacing:'0.08em', textTransform:'uppercase', fontWeight:'700', background: v.status==='maint'?'transparent':v.status==='depot'?'transparent':'rgba(255,255,255,0.06)', color: v.status==='maint'?'#555':'var(--ti2)', border: v.status==='maint'?'1px solid #333':'none' }, v.status==='maint'?'Maint':v.status==='depot'?'Depot':'Route')
+    );
+    fleetPanel.appendChild(row);
+  });
+
+  // — Schedule panel —
+  const schedItems = [
+    { time:'06:00', label:'Morning routes depart', sub:'Weber · Richter · Braun', dark:true },
+    { time:'09:00', label:'Driver cover review', sub:'Richter sick — reassignment needed', dark:false, accent:true },
+    { time:'11:30', label:'HH-GL 4421 arrives Berlin', sub:'Jonas Weber · ETA confirmed', dark:false },
+    { time:'14:00', label:'Afternoon shift handover', sub:'Schmidt · Hoffmann depart', dark:false }
+  ];
+  const schedPanel = makePanel([makePanelHead('Today\'s Schedule', 'Calendar →')]);
+  schedItems.forEach((s,i) => {
+    const row = div({ display:'flex', gap:'12px', padding:'10px 18px', borderBottom: i<schedItems.length-1?'1px solid var(--bd)':'none', alignItems:'flex-start' },
+      span({ fontSize:'10px', color:'var(--t3)', width:'36px', flexShrink:'0', paddingTop:'2px', fontFamily:'var(--fd)', fontWeight:'600' }, s.time),
+      div({ flex:'1', padding:'8px 10px', background: s.dark?'var(--black)':s.accent?'var(--cream2)':'transparent', border: (!s.dark&&!s.accent)?'1px solid var(--bd)':'none' },
+        div({ fontSize:'11px', fontWeight:'600', color: s.dark?'var(--ti1)':'var(--t1)' }, s.label),
+        div({ fontSize:'9px', color: s.dark?'var(--ti3)':'var(--t3)', marginTop:'2px' }, s.sub)
+      )
+    );
+    schedPanel.appendChild(row);
+  });
+
+  // — People panel —
+  const peoplePanel = makePanel([makePanelHead('People Today', 'All Staff →')]);
+  const peopleGrid = div({ display:'grid', gridTemplateColumns:'1fr 1fr' });
+  STAFF.slice(0,6).forEach((p,i) => {
+    const isSick = p.status==='Sick';
+    const isLeave = p.status==='On Leave';
+    const cell = div({ padding:'10px 18px', display:'flex', alignItems:'center', gap:'8px', borderRight: i%2===0?'1px solid var(--bd)':'none', borderBottom: i<4?'1px solid var(--bd)':'none', opacity: isSick||isLeave?'0.5':'1' },
+      div({ width:'30px', height:'30px', borderRadius:'50%', background:'var(--cream2)', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'var(--fd)', fontSize:'9px', fontWeight:'800', color:'var(--t1)', flexShrink:'0' }, p.init),
+      div({ flex:'1', minWidth:'0' },
+        div({ fontSize:'11px', fontWeight:'600', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }, p.name),
+        div({ fontSize:'9px', color:'var(--t3)', marginTop:'1px' }, p.status)
+      )
+    );
+    peopleGrid.appendChild(cell);
+  });
+  peoplePanel.appendChild(peopleGrid);
+
+  grid.appendChild(div({ display:'flex', flexDirection:'column', gap:'14px' }, emailPanel, fleetPanel));
+  grid.appendChild(div({ display:'flex', flexDirection:'column', gap:'14px' }, schedPanel, peoplePanel));
+
+  const inner = div({ padding:'16px 32px 32px' }, kpi, grid);
+  inner.insertBefore(div({}), inner.firstChild); // spacer
+
+  const wrapper = div({ flex:'1', display:'flex', flexDirection:'column' });
+  wrapper.appendChild(head);
+  wrapper.appendChild(inner);
+  return wrapper;
+}
+
+function renderEmailPage(pageId) {
+  const tiles = KPI.email[pageId] || KPI.email.overview;
+  const label = pageId === 'overview' ? 'All Inboxes' : pageId.toUpperCase();
+  const wrapper = div({ flex:'1', display:'flex', flexDirection:'column', className:'fade' });
+  wrapper.className = 'fade';
+
+  wrapper.appendChild(makePageHead('Email', label, '', 'Gmail + Outlook unified inbox', [makeBtn('Compose', true)]));
+
+  const inner = div({ padding:'16px 32px 32px', flex:'1' });
+  inner.appendChild(makeKpiStrip(tiles));
+
+  // Filter bar
+  const filters = ['All','Unread','Invoices','Urgent'];
+  let activeFilter = 'All';
+  const filterBar = div({ display:'flex', gap:'6px', marginBottom:'14px' });
+  filters.forEach(f => {
+    const chip = div({ padding:'6px 14px', background: f===activeFilter?'var(--black)':'var(--cream2)', color: f===activeFilter?'var(--ti1)':'var(--t2)', fontFamily:'var(--fd)', fontSize:'10px', fontWeight:'700', letterSpacing:'0.1em', textTransform:'uppercase', cursor:'pointer', userSelect:'none' }, f);
+    chip.addEventListener('click', () => { activeFilter=f; /* re-render filter visual */ });
+    filterBar.appendChild(chip);
+  });
+
+  // Email list + detail split
+  const splitGrid = div({ display:'grid', gridTemplateColumns:'380px 1fr', gap:'0', background:'#fff', border:'1px solid var(--bd)' });
+
+  // List
+  const listCol = div({ borderRight:'1px solid var(--bd)', overflowY:'auto' });
+  filterBar.style.padding = '10px';
+  filterBar.style.background = 'var(--cream2)';
+  filterBar.style.borderBottom = '1px solid var(--bd)';
+  filterBar.style.flexWrap = 'wrap';
+  listCol.appendChild(filterBar);
+
+  let selectedId = EMAILS[0].id;
+
+  function buildList() {
+    Array.from(listCol.children).forEach(c => { if (!c.classList.contains('filter-bar')) listCol.removeChild(c); });
+    const filtered = EMAILS.filter(e => {
+      if (activeFilter==='Unread') return e.unread;
+      if (activeFilter==='Invoices') return e.tag==='Invoice';
+      if (activeFilter==='Urgent') return e.tag==='Urgent';
+      return true;
+    });
+    filtered.forEach(em => {
+      const isSelected = em.id === selectedId;
+      const row = div({ padding:'12px 16px', borderBottom:'1px solid var(--bd)', cursor:'pointer', background: isSelected?'var(--cream2)':em.unread?'var(--cream)':'#fff', borderLeft: isSelected?'2px solid var(--t1)':'2px solid transparent', transition:'background 0.1s' },
+        div({ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'2px' },
+          div({ display:'flex', alignItems:'center', gap:'5px' },
+            em.unread ? div({ width:'6px', height:'6px', borderRadius:'50%', background:'var(--t1)', flexShrink:'0' }) : null,
+            span({ fontSize:'11px', fontWeight: em.unread?'600':'400' }, em.from)
+          ),
+          span({ fontSize:'9px', color:'var(--t3)' }, em.time)
+        ),
+        div({ fontSize:'10px', color:'var(--t1)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', marginBottom:'2px' }, em.subj),
+        div({ display:'flex', gap:'4px', marginTop:'3px' },
+          span({ padding:'1px 5px', fontSize:'7px', letterSpacing:'0.1em', textTransform:'uppercase', fontWeight:'700', background:'var(--cream3)', color:'var(--t1)' }, em.src),
+          em.tag ? span({ padding:'1px 5px', fontSize:'7px', letterSpacing:'0.1em', textTransform:'uppercase', fontWeight:'700', background: em.tag==='Urgent'?'var(--t1)':'var(--cream2)', color: em.tag==='Urgent'?'var(--ti1)':'var(--t1)' }, em.tag) : null
+        )
+      );
+      row.addEventListener('click', () => { selectedId=em.id; buildList(); buildDetail(); });
+      listCol.appendChild(row);
+    });
+  }
+
+  const detailCol = div({ flex:'1', display:'flex', flexDirection:'column' });
+
+  function buildDetail() {
+    detailCol.innerHTML = '';
+    const em = EMAILS.find(e=>e.id===selectedId);
+    if (!em) return;
+    const header = div({ padding:'18px 20px', borderBottom:'1px solid var(--bd)' },
+      div({ display:'flex', gap:'10px', alignItems:'flex-start' },
+        div({ width:'38px', height:'38px', borderRadius:'50%', background:'var(--cream2)', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'var(--fd)', fontSize:'12px', fontWeight:'800', color:'var(--t1)', flexShrink:'0' }, em.from.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()),
+        div({ flex:'1' },
+          div({ fontSize:'13px', fontWeight:'600' }, em.from),
+          div({ fontSize:'10px', color:'var(--t3)', marginTop:'1px' }, em.addr+' · '+em.src+' · Today '+em.time)
+        )
+      ),
+      div({ fontSize:'13px', fontWeight:'600', marginTop:'12px' }, em.subj),
+      div({ display:'flex', gap:'5px', marginTop:'7px' },
+        span({ padding:'2px 7px', fontSize:'8px', letterSpacing:'0.1em', textTransform:'uppercase', fontWeight:'700', background:'var(--cream3)', color:'var(--t1)' }, em.src),
+        em.tag ? span({ padding:'2px 7px', fontSize:'8px', letterSpacing:'0.1em', textTransform:'uppercase', fontWeight:'700', background: em.tag==='Urgent'?'var(--t1)':'var(--cream2)', color: em.tag==='Urgent'?'var(--ti1)':'var(--t1)' }, em.tag) : null,
+        em.tag==='Invoice' ? span({ padding:'2px 7px', fontSize:'8px', letterSpacing:'0.1em', textTransform:'uppercase', fontWeight:'700', background:'var(--cream2)', color:'var(--t2)' }, '✓ Auto-saved Drive') : null
+      )
+    );
+
+    const bodyDiv = div({ padding:'18px 20px', fontSize:'12px', lineHeight:'1.8', color:'var(--t2)', flex:'1', whiteSpace:'pre-wrap', borderBottom:'1px solid var(--bd)' }, em.body);
+
+    const replyArea = div({ padding:'14px 20px' },
+      div({ fontSize:'9px', letterSpacing:'0.14em', textTransform:'uppercase', fontWeight:'700', color:'var(--t3)', marginBottom:'8px', fontFamily:'var(--fd)' }, 'Reply'),
+      el('textarea', { placeholder:'Type your reply...', style:{ width:'100%', minHeight:'70px', padding:'10px 12px', border:'1px solid var(--bd)', background:'var(--cream)', fontSize:'12px', resize:'vertical', outline:'none', fontFamily:'var(--fb)' } }),
+      div({ display:'flex', justifyContent:'flex-end', gap:'8px', marginTop:'8px' },
+        makeBtn('Discard', false),
+        makeBtn('Send ↑', true)
+      )
+    );
+
+    detailCol.appendChild(header);
+    detailCol.appendChild(bodyDiv);
+    detailCol.appendChild(replyArea);
+  }
+
+  buildList();
+  buildDetail();
+
+  splitGrid.appendChild(listCol);
+  splitGrid.appendChild(detailCol);
+
+  inner.appendChild(splitGrid);
+  wrapper.appendChild(inner);
+  return wrapper;
+}
+
+function renderGenericPage(sectionId, pageId, subId) {
+  const sec = NAV.find(n=>n.id===sectionId);
+  const page = sec && sec.pages.find(p=>p.id===pageId);
+  const subpage = page && page.sub && page.sub.find(s=>s.id===subId);
+
+  const eyebrow = sec ? sec.label : sectionId;
+  const title = page ? page.label : pageId;
+  const subtitle = subpage ? subpage.label : null;
+
+  // Get KPI tiles
+  let tiles = null;
+  try {
+    const secKpi = KPI[sectionId];
+    if (secKpi) {
+      if (subId && secKpi[pageId] && secKpi[pageId][subId]) tiles = secKpi[pageId][subId];
+      else if (secKpi[pageId] && Array.isArray(secKpi[pageId])) tiles = secKpi[pageId];
+      else if (Array.isArray(secKpi)) tiles = secKpi;
+    }
+  } catch(e) {}
+
+  const displayTitle = subtitle ? title+' / '+subtitle : title;
+  const wrapper = div({ flex:'1', display:'flex', flexDirection:'column' });
+  wrapper.className = 'fade';
+
+  wrapper.appendChild(makePageHead(eyebrow, displayTitle, '', 'Overview · Data · Reporting', [makeBtn('Export', false), makeBtn('Refresh', true)]));
+
+  const inner = div({ padding:'16px 32px 32px', flex:'1' });
+  if (tiles) inner.appendChild(makeKpiStrip(tiles));
+
+  // Content placeholder grid
+  const grid = div({ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'14px' });
+
+  // Left panel
+  const lPanel = makePanel([
+    makePanelHead(eyebrow+' — '+title+' Data', 'View All →'),
+    div({ padding:'20px 18px' },
+      ...Array.from({length:6}, (_,i) => div({ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 0', borderBottom: i<5?'1px solid var(--bd)':'none' },
+        div({ fontSize:'12px', color:'var(--t2)' }, 'Record '+(i+1)+' — '+eyebrow),
+        div({ fontSize:'11px', color:'var(--t3)' }, 'Detail →')
+      ))
+    )
+  ]);
+
+  // Right panel — activity
+  const rPanel = makePanel([
+    makePanelHead('Activity & Updates', ''),
+    div({ padding:'14px 18px' },
+      ...['Updated 2 min ago', 'Report generated', 'Data synced', 'Review complete'].map((item,i) => div({ display:'flex', gap:'10px', alignItems:'flex-start', padding:'9px 0', borderBottom: i<3?'1px solid var(--bd)':'none' },
+        div({ width:'6px', height:'6px', borderRadius:'50%', background:'var(--cream3)', flexShrink:'0', marginTop:'4px' }),
+        div({ fontSize:'11px', color:'var(--t2)' }, item)
+      ))
+    )
+  ]);
+
+  // Integration callout
+  const callout = div({ gridColumn:'1/-1', background:'var(--near)', border:'1px solid rgba(255,255,255,0.05)', padding:'20px 24px', display:'flex', alignItems:'center', gap:'16px' },
+    div({ flex:'1' },
+      div({ fontFamily:'var(--fd)', fontSize:'14px', fontWeight:'800', letterSpacing:'0.08em', color:'var(--ti1)', marginBottom:'4px' }, '🔗 Live Integration Pending'),
+      div({ fontSize:'12px', color:'var(--ti3)' }, 'This section will connect to '+eyebrow+' data via API. Configure your credentials to activate live data.')
+    ),
+    makeBtn('Configure →', true)
+  );
+
+  grid.appendChild(lPanel);
+  grid.appendChild(rPanel);
+  grid.appendChild(callout);
+
+  inner.appendChild(grid);
+  wrapper.appendChild(inner);
+  return wrapper;
+}
+
+function renderFleetOverview() {
+  const wrapper = div({ flex:'1', display:'flex', flexDirection:'column' });
+  wrapper.className = 'fade';
+  wrapper.appendChild(makePageHead('Fleet', 'Fleet', 'Overview', '6 vehicles · Live tracking', [makeBtn('Export', false), makeBtn('Fleet App →', true, ()=>navigate('fleet','fleetapp'))]));
+  const inner = div({ padding:'16px 32px 32px' });
+  inner.appendChild(makeKpiStrip(KPI.fleet.overview));
+  const grid = div({ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'10px' });
+  FLEET.forEach(v => {
+    const card = div({ background:'var(--near)', padding:'16px', border:'1px solid rgba(255,255,255,0.04)', opacity: v.status==='maint'?'0.65':'1' },
+      div({ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'6px' },
+        div({ fontFamily:'var(--fd)', fontSize:'16px', fontWeight:'900', color:'var(--ti1)', letterSpacing:'0.06em' }, v.plate),
+        span({ padding:'2px 6px', fontSize:'8px', letterSpacing:'0.1em', textTransform:'uppercase', fontWeight:'700', background: v.status==='maint'?'transparent':v.status==='depot'?'transparent':'rgba(255,255,255,0.06)', color: v.status==='maint'?'#555':'var(--ti2)', border: v.status==='maint'?'1px solid #333':v.status==='depot'?'1px solid rgba(255,255,255,0.08)':'none' }, v.status==='maint'?'Maint':v.status==='depot'?'Depot':'Route')
+      ),
+      div({ fontSize:'9px', color:'var(--ti3)', marginBottom:'3px' }, v.type+' · '+v.driver),
+      div({ fontSize:'10px', color:'var(--ti2)', marginBottom:'10px' }, v.route),
+      div({ height:'2px', background:'var(--shade)', position:'relative', overflow:'hidden', marginBottom:'5px' },
+        div({ position:'absolute', top:'0', left:'0', bottom:'0', width:v.pct+'%', background: v.status==='maint'?'#444':'var(--ti3)' })
+      ),
+      div({ display:'flex', justifyContent:'space-between' },
+        span({ fontSize:'9px', color:'var(--ti3)' }, v.pct+'% complete'),
+        span({ fontSize:'9px', color:'var(--ti3)' }, 'ETA '+v.eta)
+      )
+    );
+    grid.appendChild(card);
+  });
+  inner.appendChild(grid);
+  wrapper.appendChild(inner);
+  return wrapper;
+}
+
+function renderEmployeeOverview() {
+  const wrapper = div({ flex:'1', display:'flex', flexDirection:'column' });
+  wrapper.className = 'fade';
+  wrapper.appendChild(makePageHead('Employee', 'Team', 'Overview', '8 staff registered', [makeBtn('Add Employee', true)]));
+  const inner = div({ padding:'16px 32px 32px' });
+  inner.appendChild(makeKpiStrip(KPI.employee.overview));
+  const grid = div({ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr', gap:'10px' });
+  STAFF.forEach(p => {
+    const isSick = p.status==='Sick', isLeave=p.status==='On Leave';
+    const card = div({ background:'#fff', border:'1px solid var(--bd)', padding:'16px', opacity: isSick||isLeave?'0.6':'1' },
+      div({ width:'40px', height:'40px', borderRadius:'50%', background:'var(--cream2)', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'var(--fd)', fontSize:'13px', fontWeight:'800', color:'var(--t1)', marginBottom:'10px' }, p.init),
+      div({ fontSize:'12px', fontWeight:'600', marginBottom:'2px' }, p.name),
+      div({ fontSize:'10px', color:'var(--t3)', marginBottom:'8px' }, p.role),
+      div({ display:'flex', justifyContent:'space-between', alignItems:'center' },
+        span({ padding:'2px 7px', fontSize:'8px', letterSpacing:'0.1em', textTransform:'uppercase', fontWeight:'700', background: isSick?'var(--cream3)':isLeave?'var(--cream2)':'var(--t1)', color: isSick||isLeave?'var(--t2)':'var(--ti1)' }, p.status),
+        span({ fontSize:'9px', color:'var(--t4)' }, p.section)
+      )
+    );
+    grid.appendChild(card);
+  });
+  inner.appendChild(grid);
+  wrapper.appendChild(inner);
+  return wrapper;
+}
+
+/* ─── User Panel Dropdown ─── */
+function makeUserDropdown() {
+  const overlay = div({ position:'fixed', inset:'0', zIndex:'100' });
+  overlay.addEventListener('click', () => { state.userOpen=false; render(); });
+
+  const panel = div({ position:'fixed', top:'52px', right:'0', width:'260px', background:'var(--near)', border:'1px solid rgba(255,255,255,0.06)', zIndex:'101', boxShadow:'0 8px 32px rgba(0,0,0,0.5)' },
+    div({ padding:'16px 18px', borderBottom:'1px solid rgba(255,255,255,0.06)' },
+      div({ display:'flex', gap:'10px', alignItems:'center' },
+        div({ width:'38px', height:'38px', borderRadius:'50%', background:'var(--shade)', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'var(--fd)', fontSize:'13px', fontWeight:'800', color:'var(--ti2)' }, 'AU'),
+        div({},
+          div({ fontSize:'13px', fontWeight:'600', color:'var(--ti1)' }, 'Admin User'),
+          div({ fontSize:'10px', color:'var(--ti3)', marginTop:'1px' }, 'admin@gleelogistics.de')
+        )
+      ),
+      div({ marginTop:'10px', padding:'5px 8px', background:'rgba(255,255,255,0.04)', display:'inline-block' },
+        span({ fontSize:'9px', letterSpacing:'0.12em', textTransform:'uppercase', fontWeight:'700', color:'var(--ti3)', fontFamily:'var(--fd)' }, 'Super Admin')
+      )
+    ),
+    ...['Profile Settings','User Management','Notifications','Help & Support'].map(item =>
+      div({ padding:'11px 18px', borderBottom:'1px solid rgba(255,255,255,0.04)', cursor:'pointer', fontSize:'12px', color:'var(--ti2)', display:'flex', alignItems:'center', justifyContent:'space-between' },
+        item, span({ fontSize:'10px', color:'var(--ti3)' }, '→')
+      )
+    ),
+    div({ padding:'11px 18px', cursor:'pointer', fontSize:'12px', color:'var(--ti3)', letterSpacing:'0.06em' }, 'Sign Out')
+  );
+
+  const wrapper = div({});
+  wrapper.appendChild(overlay);
+  wrapper.appendChild(panel);
+  return wrapper;
+}
+
+/* ═══════════════════════════════════════
+   MAIN RENDER
+═══════════════════════════════════════ */
+function getPageContent() {
+  const { section, page, sub } = state;
+  if (section==='dashboard') return renderDashboardOverview();
+  if (section==='email')     return renderEmailPage(page);
+  if (section==='fleet' && page==='overview') return renderFleetOverview();
+  if (section==='fleet' && page==='fleetapp') return renderGenericPage('fleet','fleetapp',null);
+  if (section==='employee' && page==='overview') return renderEmployeeOverview();
+  return renderGenericPage(section, page, sub);
+}
+
+function render() {
+  const app = document.getElementById('app');
+  app.innerHTML = '';
+
+  const shell = div({ height:'100vh', display:'flex', flexDirection:'column', overflow:'hidden' });
+
+  // Topbar
+  shell.appendChild(makeTopbar());
+
+  // Body
+  const body = div({ flex:'1', display:'flex', overflow:'hidden' });
+  body.appendChild(makeSidebar());
+
+  // Content area
+  const content = div({ flex:'1', overflowY:'auto', background:'var(--cream)', display:'flex', flexDirection:'column' });
+  content.className = 'dark-scroll';
+  content.appendChild(getPageContent());
+  body.appendChild(content);
+
+  shell.appendChild(body);
+  app.appendChild(shell);
+
+  // User panel overlay
+  if (state.userOpen) app.appendChild(makeUserDropdown());
+}
+
+/* ─── Init ─── */
+render();
+</script>
+</body>
+</html>
+ENDOFFILE
