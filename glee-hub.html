@@ -457,6 +457,12 @@ function renderLogin(){
       role:account.role,
       googleToken:null
     };
+    // Set correct starting page per role
+    if(account.role==='ops'){
+      APP.section='quality';APP.page='dsy2';APP.sub='overview';
+    } else {
+      APP.section='dashboard';APP.page='overview';APP.sub=null;
+    }
     APP.gmail.threads=getDemoEmails();
     render();
   }
@@ -1077,7 +1083,7 @@ function getContent(){
   if(section==='dashboard'&&page==='calendar')return renderCalendar();
   if(section==='email')return renderEmailPage();
   if(section==='fleet'&&page==='dsy2')return renderDSY2();
-  if(section==='quality'&&page==='dsy2')return renderQualityDSY2(sub);
+  if(section==='quality')return renderQualityDSY2(sub);
   return renderGeneric(section,page,sub);
 }
 
