@@ -516,7 +516,7 @@ function rOverview(){
 <div class="card-grid cg4" style="margin-bottom:16px">
   <div class="card dark">
     <div class="c-label">Avg Score</div>
-    <div class="c-val lg ${aScr>=85?'good':aScr>=78?'warn':'bad'}">${f1(aScr)}</div>
+    <div class="c-val ${aScr>=85?'good':aScr>=78?'warn':'bad'}">${f1(aScr)}</div>
     <div class="c-sub">${aScr>=85?'Fantastic or better':aScr>=78?'Great — room to grow':'Below target'}</div>
   </div>
   <div class="card dark">
@@ -541,7 +541,7 @@ function rOverview(){
 <div style="background:var(--white);border:1px solid var(--border);padding:16px 20px;margin-bottom:16px">
   <div style="display:flex;align-items:flex-start;gap:16px">
     <div style="flex-shrink:0;padding:16px 20px;background:var(--dark);color:#fff;min-width:100px;text-align:center">
-      <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:6px">Latest</div>
+      <div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:6px">Latest</div>
       <div style="font-family:var(--cond);font-size:40px;font-weight:900;color:${last.score>=85?'#4ade80':last.score>=78?'#fbbf24':'#f87171'}">${last.score}</div>
       <div style="margin:6px 0">${tb(last.tier)}</div>
       <div style="font-size:10px;color:rgba(255,255,255,.4)">W${lw} · #${last.rank}</div>
