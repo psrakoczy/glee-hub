@@ -539,17 +539,20 @@ function rOverview(){
 
 <div class="section-head" style="margin-bottom:0">WEEK TIER TIMELINE</div>
 <div style="background:var(--white);border:1px solid var(--border);padding:16px 20px;margin-bottom:16px">
-  <div style="display:flex;align-items:flex-start;gap:16px">
-    <div style="flex-shrink:0;padding:16px 20px;background:var(--dark);color:#fff;min-width:100px;text-align:center">
-      <div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:6px">Latest</div>
-      <div style="font-family:var(--cond);font-size:40px;font-weight:900;color:${last.score>=85?'#4ade80':last.score>=78?'#fbbf24':'#f87171'}">${last.score}</div>
-      <div style="margin:6px 0">${tb(last.tier)}</div>
-      <div style="font-size:10px;color:rgba(255,255,255,.4)">W${lw} · #${last.rank}</div>
+  <div style="display:flex;align-items:stretch;gap:16px">
+    <div style="flex-shrink:0;padding:20px 24px;background:var(--dark);color:#fff;min-width:130px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px">
+      <div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.4)">Latest</div>
+      <div style="font-family:var(--cond);font-size:52px;font-weight:900;line-height:1;color:${last.score>=85?'#4ade80':last.score>=78?'#fbbf24':'#f87171'}">${last.score}</div>
+      <div>${tb(last.tier)}</div>
+      <div style="font-size:10px;color:rgba(255,255,255,.4)">W${lw} · Rank #${last.rank}</div>
     </div>
-    <div style="flex:1;overflow-x:auto">
-      <div style="display:flex;gap:6px;padding:2px 0;min-width:max-content">
-        ${allW.map(w=>{const d=DB.ws[w];const s=sSet.has(w);const isL=w===lw;return`<div style="text-align:center;opacity:${s?1:.2};min-width:68px;padding:10px 6px;border:1px solid ${isL?'var(--dark)':'var(--border)'};background:${isL?'var(--cream)':'transparent'}"><div style="font-size:10px;color:var(--text2);margin-bottom:4px;font-weight:${isL?700:400}">W${w}</div>${tb(d.tier)}<div style="font-size:10px;color:var(--text2);margin-top:4px">${d.score}</div><div style="font-size:10px;color:var(--text3)">#${d.rank}</div></div>`;}).join('')}
-      </div>
+    <div style="flex:1;overflow-y:auto;max-height:220px;border:1px solid var(--border);">
+      ${[...allW].reverse().map(w=>{const d=DB.ws[w];const s=sSet.has(w);const isL=w===lw;return`<div style="display:flex;align-items:center;gap:12px;padding:8px 14px;border-bottom:1px solid var(--border);background:${isL?'var(--cream)':'transparent'};opacity:${s?1:.45};">
+        <div style="font-family:var(--cond);font-size:12px;font-weight:700;letter-spacing:.06em;color:var(--text2);min-width:28px">W${w}</div>
+        <div style="min-width:110px">${tb(d.tier)}</div>
+        <div style="font-family:var(--cond);font-size:18px;font-weight:700;color:${d.score>=85?'var(--green)':d.score>=78?'var(--amber)':'var(--red)'};min-width:48px">${d.score}</div>
+        <div style="font-size:11px;color:var(--text3)">Rank #${d.rank}</div>
+      </div>`;}).join('')}
     </div>
   </div>
 </div>
