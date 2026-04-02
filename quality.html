@@ -226,25 +226,42 @@ select option{background:#fff}
 <body>
 
 <!-- TOP BAR -->
-<div class="topbar">
-  <a href="https://hb.gleelogistics.de/?hub=1" target="_top" style="text-decoration:none;"><div class="topbar-brand" style="cursor:pointer;">GLEE <span>HUB</span></div>
+<div class="topbar" id="gleehub-topbar">
+  <a href="https://hb.gleelogistics.de/?hub=1" target="_top" style="text-decoration:none;color:inherit;">
+    <div class="topbar-brand" style="cursor:pointer;">GLEE <span>HUB</span></div>
+  </a>
   <div class="topbar-center">
     <span class="topbar-date" id="t-date"></span>
     <span class="topbar-clock" id="t-clock"></span>
   </div>
   <div class="topbar-right">
-<a href="https://hb.gleelogistics.de/?hub=1" target="_top" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.9);font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;margin-right:6px;font-family:var(--cond);">&larr; Hub</a>
-<a href="https://hb.gleelogistics.de/?signout=1" target="_top" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:rgba(255,255,255,.05);color:rgba(255,255,255,.5);font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;margin-right:8px;font-family:var(--cond);">Sign Out</a>
-    <span class="topbar-role">Admin / Manager</span>
+    <span class="topbar-role" id="tb-role">DSY2 Quality</span>
     <span class="topbar-station"><span class="live-dot"></span> LIVE · DSY2</span>
-    <div class="topbar-avatar">GL</div>
+    <div class="topbar-avatar" id="tb-avatar" style="font-size:11px;font-weight:700;">GL</div>
     <div class="topbar-user">
-      <div class="topbar-user-name">GLEL DSY2</div>
-      <div class="topbar-user-email" id="drive-status-top"></div>
+      <div class="topbar-user-name" id="tb-name">GLEL DSY2</div>
+      <div class="topbar-user-email" id="tb-email" style="font-size:10px;color:rgba(255,255,255,.35);"></div>
     </div>
+    <div style="width:1px;height:20px;background:rgba(255,255,255,.1);margin:0 4px;"></div>
+    <a href="https://hb.gleelogistics.de/?hub=1" target="_top" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;color:rgba(255,255,255,.6);font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;text-decoration:none;transition:color .15s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.6)'">&#8592; HUB</a>
+    <a href="https://hb.gleelogistics.de/?signout=1" target="_top" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;color:rgba(255,255,255,.4);font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;text-decoration:none;transition:color .15s;" onmouseover="this.style.color='rgba(255,255,255,.8)'" onmouseout="this.style.color='rgba(255,255,255,.4)'">&#8856; SIGN OUT</a>
   </div>
 </div>
-
+<script>
+(function(){
+  try {
+    var s = JSON.parse(sessionStorage.getItem('gleeSession') || 'null');
+    if (s && s.user) {
+      var u = s.user;
+      var el = function(id){ return document.getElementById(id); };
+      if(el('tb-role')) el('tb-role').textContent = u.title || 'DSY2 Quality';
+      if(el('tb-avatar')) el('tb-avatar').textContent = u.initials || 'GL';
+      if(el('tb-name')) el('tb-name').textContent = u.name || 'GLEL DSY2';
+      if(el('tb-email')) el('tb-email').textContent = u.email || '';
+    }
+  } catch(e) {}
+})();
+</script>
 <!-- LAYOUT -->
 <div class="layout">
 
