@@ -1037,12 +1037,47 @@ function rAddrTable(rows,tot){
     <td style="padding:12px;font-weight:700;color:var(--amber)">€${r.total.toLocaleString('de-DE',{minimumFractionDigits:2})}</td>
     <td style="padding:12px">${maps?`<a href="${maps}" target="_blank" onclick="event.stopPropagation()" style="color:var(--text2);font-size:11px">📍</a>`:''}</td>
   </tr>
-  ${isOpen?`<tr><td colspan="6" style="padding:0;border-bottom:2px solid var(--dark)"><table style="width:100%"><thead><tr style="background:var(--dark);color:#fff;font-size:10px;letter-spacing:.06em"><td style="padding:8px 14px">WK</td><td style="padding:8px 14px">DRIVER</td><td style="padding:8px 14px">ADDRESS ID</td><td style="padding:8px 14px">TRACKING ID</td><td style="padding:8px 14px">DATE</td><td style="padding:8px 14px">CYCLE</td><td style="padding:8px 14px">REASON</td><td style="padding:8px 14px">COST</td></tr></thead><tbody>${drawerRows}</tbody></table></td></tr>`:''}`;}).join('')}
+  `;
+}).join('')}
 </tbody></table></div>`;
   window._addrRows=rows;window._addrTot=tot;
-  // Fix row click handlers
+  // Fix row click handlers — insert/remove drawer in-place, no full re-render
   content.querySelectorAll('tr[data-addr-id]').forEach(row=>{
-    row.onclick=()=>{addrOpenId=addrOpenId===row.dataset.addrId?null:row.dataset.addrId;rAddrTable(rows,tot);};
+    row.onclick=()=>{
+      const id=row.dataset.addrId;
+      const existingDrawer=row.nextElementSibling;
+      // If drawer already open for this row, close it
+      if(existingDrawer&&existingDrawer.dataset.drawer===id){
+        existingDrawer.remove();
+        addrOpenId=null;
+        return;
+      }
+      // Close any other open drawer first
+      const openDrawer=content.querySelector('tr[data-drawer]');
+      if(openDrawer)openDrawer.remove();
+      // Find the address data for this row
+      const r=rows.find(x=>String(x.id)===String(id));
+      if(!r)return;
+      addrOpenId=id;
+      // Update arrow indicator on all rows
+      content.querySelectorAll('tr[data-addr-id] td:nth-child(2) span').forEach(s=>s.textContent='▼');
+      row.querySelector('td:nth-child(2) span').textContent='▲';
+      // Build drawer row
+      const drawerRows=r.parcels.slice().sort((a,b)=>{const[am,ad]=(a[6]||'').split('-').map(Number);const[bm,bd]=(b[6]||'').split('-').map(Number);return am!==bm?am-bm:ad-bd;}).map(p=>`<tr style="background:var(--cream)">
+        <td style="padding:7px 14px;font-size:11px;color:var(--text2)">W${p[0]}</td>
+        <td style="padding:7px 14px;font-size:11px">${p[2]}</td>
+        <td style="padding:7px 14px;font-size:10px;color:var(--text2);font-family:monospace">${p[9]||'—'}</td>
+        <td style="padding:7px 14px;font-size:10px;font-family:monospace">${p[3]}</td>
+        <td style="padding:7px 14px;font-size:11px;color:var(--text2)">${p[6]||'—'}</td>
+        <td style="padding:7px 14px"><span style="font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;background:${p[7]==='SAME DAY'?'rgba(99,179,237,.15)':'rgba(143,179,59,.12)'};color:${p[7]==='SAME DAY'?'#63b3ed':'#8fb33b'}">${p[7]==='SAME DAY'?'SD':'ND'}</span></td>
+        <td style="padding:7px 14px"><span class="rpill" style="font-size:9px">${ADDR_BUCKETS[p[4]]||'—'}</span></td>
+        <td style="padding:7px 14px;font-weight:700;color:var(--amber)">€${p[5].toFixed(2)}</td>
+      </tr>`).join('');
+      const drawerTr=document.createElement('tr');
+      drawerTr.dataset.drawer=id;
+      drawerTr.innerHTML=`<td colspan="6" style="padding:0;border-bottom:2px solid var(--dark)"><table style="width:100%"><thead><tr style="background:var(--dark);color:#fff;font-size:10px;letter-spacing:.06em"><td style="padding:8px 14px">WK</td><td style="padding:8px 14px">DRIVER</td><td style="padding:8px 14px">ADDRESS ID</td><td style="padding:8px 14px">TRACKING ID</td><td style="padding:8px 14px">DATE</td><td style="padding:8px 14px">CYCLE</td><td style="padding:8px 14px">REASON</td><td style="padding:8px 14px">COST</td></tr></thead><tbody>${drawerRows}</tbody></table></td>`;
+      row.insertAdjacentElement('afterend',drawerTr);
+    };
   });
   const pg=document.getElementById('addr-pag');
   if(pg){const tp=Math.ceil(tot/ADDR_PG);pg.innerHTML=tp>1?`<span>${tot} addresses · Page ${addrPg+1}/${tp}</span><button class="pgb" onclick="addrPg--;rAddr()" ${addrPg===0?'disabled':''}>← Prev</button><button class="pgb" onclick="addrPg++;rAddr()" ${addrPg>=tp-1?'disabled':''}>Next →</button>`:''}
