@@ -400,7 +400,39 @@ async function loadFromDrive(){
   if(!DRIVE_URL)return null;
   try{
     const r=await fetch(DRIVE_URL+'?t='+Date.now());
-    if(r.ok){const d=await r.json();driveStatus='ok';updDriveUI();return d;}
+    if(r.ok){
+      const d=await r.json();
+      driveStatus='ok';updDriveUI();
+      // Transform API data into dashboard DB format
+      const db={ws:{},wb:{},das:[...SEED_DA],updated:d.updated};
+      // WSData: array of {week,score,tier,...} -> {week: {score,tier,...}}
+      if(d.ws) d.ws.forEach(row=>{
+        const wk=String(row.week);
+        db.ws[wk]={score:+row.score,tier:row.tier,rank:+row.rank,dsc:+row.dsc,dcr:+row.dcr,fico:+row.fico,vsa:+row.vsa,spd:+row.spd,men:+row.men,whc:+row.whc,pod:+row.pod,cc:+row.cc,ce:+row.ce,cdf:+row.cdf,dnr:+row.dnr,lor:+row.lor};
+      });
+      // WBData: array of {week,household,...} -> {week: [h,n,m,r,p,np,g,gs]}
+      if(d.wb) d.wb.forEach(row=>{
+        const wk=String(row.week);
+        db.wb[wk]=[+row.household,+row.neighbour,+row.mailslot,+row.receptionist,+row.prefs,+row.nopod,+row.geo,+row.group];
+      });
+      // DAScorecard: array of {week,da_idx,delivered,...} -> DA_SC[week][idx]=[...]
+      if(d.dasc) d.dasc.forEach(row=>{
+        const wk=String(row.week);
+        if(!DA_SC[wk])DA_SC[wk]={};
+        DA_SC[wk][String(row.da_idx)]=[+row.delivered,+row.dcr,+row.dsc,+row.lor,+row.pod,+row.cc,+row.ce,row.cdf===''||row.cdf===null?null:+row.cdf];
+      });
+      // Concessions: array of {week,da_idx,tracking_id,...} -> CD array format
+      if(d.concessions){
+        CD.length=0;
+        d.concessions.forEach(row=>{
+          const zip=String(row.zip||'').replace(/\.0$/,'').padStart(5,'0');
+          let date=String(row.date||'');
+          if(date.includes('T'))date=date.slice(5,10).split('-').join('-');
+          CD.push([+row.week,+row.da_idx,String(row.tracking_id),+row.bucket,+row.value_cents,zip,+row.bitmask,date,row.cycle||null]);
+        });
+      }
+      return db;
+    }
   }catch(e){driveStatus='err';}
   updDriveUI();return null;
 }
