@@ -957,7 +957,7 @@ function getAddrFiltered(){
   const bkF=addrBucket==='all'?daF:daF.filter(r=>r[4]===+addrBucket);
   const cyF=addrCycle==='all'?bkF:bkF.filter(r=>r[7]===addrCycle);
   const srch=addrSearch.toLowerCase();
-  return srch?cyF.filter(r=>r[8].toLowerCase().includes(srch)||r[10].toLowerCase().includes(srch)||r[11].includes(srch)||r[3].toLowerCase().includes(srch)||r[2].toLowerCase().includes(srch)):cyF;
+  return srch?cyF.filter(r=>String(r[8]||'').toLowerCase().includes(srch)||String(r[10]||'').toLowerCase().includes(srch)||String(r[11]||'').includes(srch)||String(r[3]||'').toLowerCase().includes(srch)||String(r[2]||'').toLowerCase().includes(srch)):cyF;
 }
 
 function getAddrGrouped(final){
@@ -987,7 +987,7 @@ function rAddr(){
 </div>
 <div class="section-head" style="margin-bottom:0">FILTERS</div>
 <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:12px 16px;background:var(--white);border:1px solid var(--border);margin-bottom:16px">
-  <div class="srw" style="flex:1;min-width:200px"><svg class="sri" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><input placeholder="Address, city, ZIP, driver or tracking ID..." value="${addrSearch}" oninput="addrSearch=this.value;addrPg=0;rAddr()" style="width:100%"></div>
+  <div class="srw" style="flex:1;min-width:200px"><svg class="sri" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><input placeholder="Address, city, ZIP, driver or tracking ID..." value="${addrSearch}" oninput="addrSearch=this.value;addrPg=0;const _cp=this.selectionStart;rAddr();const _inp=document.querySelector('#s-addr input');if(_inp){_inp.focus();try{_inp.setSelectionRange(_cp,_cp);}catch(e){}}" style="width:100%"></div>
   <select onchange="addrBucket=this.value;addrPg=0;rAddr()" style="padding:6px 10px;border:1px solid var(--border);font-size:12px"><option value="all">All Reasons</option>${ADDR_BUCKETS.map((b,i)=>`<option value="${i}" ${addrBucket===String(i)?'selected':''}>${b}</option>`).join('')}</select>
   <select onchange="addrCycle=this.value;addrPg=0;rAddr()" style="padding:6px 10px;border:1px solid var(--border);font-size:12px"><option value="all" ${addrCycle==='all'?'selected':''}>All Cycles</option><option value="SAME DAY" ${addrCycle==='SAME DAY'?'selected':''}>Same Day</option><option value="NEXT DAY" ${addrCycle==='NEXT DAY'?'selected':''}>Next Day</option></select>
   <select onchange="addrMinCount=+this.value;addrPg=0;rAddr()" style="padding:6px 10px;border:1px solid var(--border);font-size:12px"><option value="1" ${addrMinCount===1?'selected':''}>Min 1</option><option value="2" ${addrMinCount===2?'selected':''}>Min 2+</option><option value="3" ${addrMinCount===3?'selected':''}>Min 3+</option><option value="4" ${addrMinCount===4?'selected':''}>Min 4+</option></select>
