@@ -246,21 +246,6 @@ select option{background:#fff}
   </div>
 </div>
 <style>#gleehub-topbar .topbar-brand{display:none!important;}</style>
-<script>
-(function(){
-  try {
-    var s = JSON.parse(sessionStorage.getItem('gleeSession') || 'null');
-    if (s && s.user) {
-      var u = s.user;
-      var el = function(id){ return document.getElementById(id); };
-      if(el('tb-role')) el('tb-role').textContent = u.title || 'DSY2 Quality';
-      if(el('tb-avatar')) el('tb-avatar').textContent = u.initials || 'GL';
-      if(el('tb-name')) el('tb-name').textContent = u.name || 'GLEL DSY2';
-      if(el('tb-email')) el('tb-email').textContent = u.email || '';
-    }
-  } catch(e) {}
-})();
-</script>
 <!-- LAYOUT -->
 <div class="layout">
 
@@ -457,6 +442,8 @@ async function saveToDrive(data){
 
 /* ─ STORAGE ─ */
 async function init(){
+  // Inject user info from hub session into topbar
+  try{var gs=JSON.parse(sessionStorage.getItem('gleeSession')||'null');if(gs&&gs.user){var u=gs.user;var ge=function(id){return document.getElementById(id);};if(ge('tb-role'))ge('tb-role').textContent=u.title||'DSY2 Quality';if(ge('tb-avatar'))ge('tb-avatar').textContent=u.initials||'GL';if(ge('tb-name'))ge('tb-name').textContent=u.name||'GLEL DSY2';if(ge('tb-email'))ge('tb-email').textContent=u.email||'';}}catch(e){}
   let data=await loadFromDrive();
   if(!data){try{const s=localStorage.getItem('glel_v5');if(s)data=JSON.parse(s);}catch(e){}}
   if(!data)data={ws:{...SEED_WS},wb:{...SEED_WB},das:[...SEED_DA],updated:null};
@@ -1066,7 +1053,7 @@ function rAddr(){
 ${page.map(r=>{
   const buckCount={};
   r.buckets.forEach(b=>{buckCount[b]=(buckCount[b]||0)+1;});
-  const buckStr=Object.entries(buckCount).sort((a,b)=>b[1]-a[1]).map(([b,c])=>`<span class="rpill">${ADDR_BUCKETS[+b]} ${c>1?'('+c+')':\'\'}</span>`).join(' ');
+  const buckStr=Object.entries(buckCount).sort((a,b)=>b[1]-a[1]).map(([b,c])=>`<span class="rpill">${ADDR_BUCKETS[+b]} ${c>1?'('+c+')':''}</span>`).join(' ');
   const sdCount=r.cycles.filter(c=>c==='SAME DAY').length;
   const ndCount=r.cycles.filter(c=>c==='NEXT DAY').length;
   const cycStr=(sdCount?`<span style="font-size:9px;font-weight:700;padding:2px 5px;background:rgba(99,179,237,.15);color:#63b3ed">SD${sdCount>1?' x'+sdCount:''}</span> `:'')+(ndCount?`<span style="font-size:9px;font-weight:700;padding:2px 5px;background:rgba(143,179,59,.12);color:#8fb33b">ND${ndCount>1?' x'+ndCount:''}</span>`:'');
