@@ -988,7 +988,7 @@ function rAddr(){
 <div class="tbl-section"><div class="tbl-wrap h580"><table>
 <thead><tr>${th('count','Parcels')}${th('addr','Address')}${th('zip','ZIP')}<th>City</th>${th('total','Total €')}<th>Map</th></tr></thead>
 <tbody>${page.map(r=>{
-  const isOpen=addrOpenId===r.id;
+  const isOpen=String(addrOpenId)===String(r.id);
   const hot=r.count>=5?'var(--red)':r.count>=3?'var(--amber)':'var(--text)';
   const maps=r.lat&&r.lon?`https://www.google.com/maps?q=${r.lat},${r.lon}`:'';
   const sortedParcels=r.parcels.slice().sort((a,b)=>{const[am,ad]=(a[6]||'').split('-').map(Number);const[bm,bd]=(b[6]||'').split('-').map(Number);return am!==bm?am-bm:ad-bd;});
@@ -1002,7 +1002,7 @@ function rAddr(){
     <td style="padding:7px 14px"><span class="rpill" style="font-size:9px">${ADDR_BUCKETS[p[4]]||'—'}</span></td>
     <td style="padding:7px 14px;font-weight:700;color:var(--amber)">€${p[5].toFixed(2)}</td>
   </tr>`).join('');
-  return`<tr style="cursor:pointer;transition:background .1s;${isOpen?'background:rgba(0,0,0,.04)':''}" onclick="addrOpenId=addrOpenId===${JSON.stringify(r.id)}?null:${JSON.stringify(r.id)};rAddr()">
+  return`<tr style="cursor:pointer;transition:background .1s;${isOpen?'background:rgba(0,0,0,.04)':''}" data-addr-id="${r.id}" onclick="addrOpenId=addrOpenId===this.dataset.addrId?null:this.dataset.addrId;rAddr()">
     <td style="font-family:var(--cond);font-size:28px;font-weight:900;color:${hot};text-align:center;width:70px;padding:12px">${r.count}</td>
     <td style="font-weight:600;padding:12px">${r.addr||'—'} <span style="font-size:10px;color:var(--text3);font-weight:400">${isOpen?'▲':'▼'}</span></td>
     <td style="padding:12px;color:var(--text2)">${r.zip}</td>
